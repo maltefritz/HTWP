@@ -58,14 +58,16 @@ hs_heatex2hs_back = Connection(
     heatsource_heatexchanger, 'out1', heatsource_backflow, 'in1', label='con04'
     )
 
-nw.add(cc2hs_heatex, hs_feed2hs_pump, hs_pump2hs_heatex, hs_heatex2hs_back)
+nw.add_conns(
+    cc2hs_heatex, hs_feed2hs_pump, hs_pump2hs_heatex, hs_heatex2hs_back
+    )
 
 # Internal Heat Exchange cold
 hs_heatex2int_heatex = Connection(
     heatsource_heatexchanger, 'out2', int_heatex, 'in2', label='con05'
     )
 
-nw.add(hs_heatex2int_heatex)
+nw.add_conns(hs_heatex2int_heatex)
 
 # Compression
 int_heatex2comp = Connection(
@@ -75,7 +77,7 @@ comp2cond = Connection(
     compressor, 'out1', condenser, 'in1', label='con07'
     )
 
-nw.add(int_heatex2comp, comp2cond)
+nw.add_conns(int_heatex2comp, comp2cond)
 
 # Heat Sink
 cons_back2cons_pump = Connection(
@@ -91,14 +93,16 @@ cons_hs2cons_feed = Connection(
     cons_heatsink, 'out1', cons_feedflow, 'in1', label='con11'
     )
 
-nw.add(cons_back2cons_pump, cons_pump2cond, cond2cons_hs, cons_hs2cons_feed)
+nw.add_conns(
+    cons_back2cons_pump, cons_pump2cond, cond2cons_hs, cons_hs2cons_feed
+    )
 
 # Internal Heat Exchange hot
 cond2int_heatex = Connection(
     condenser, 'out1', int_heatex, 'in1', label='con12'
     )
 
-nw.add(cond2int_heatex)
+nw.add_conns(cond2int_heatex)
 
 # Expansion
 int_heatex2valve = Connection(
@@ -108,4 +112,4 @@ valve2cc = Connection(
     valve, 'out1', cycle_closer, 'in1', label='con14'
     )
 
-nw.add(int_heatex2valve, valve2cc)
+nw.add_conns(int_heatex2valve, valve2cc)

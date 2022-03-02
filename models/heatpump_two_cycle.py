@@ -71,7 +71,9 @@ hs_heatex2hs_back = Connection(
     heatsource_heatexchanger, 'out1', heatsource_backflow, 'in1', label='con04'
     )
 
-nw.add(cc_lp2hs_heatex, hs_feed2hs_pump, hs_pump2hs_heatex, hs_heatex2hs_back)
+nw.add_conns(
+    cc_lp2hs_heatex, hs_feed2hs_pump, hs_pump2hs_heatex, hs_heatex2hs_back
+    )
 
 # Compression LP
 hs_heatex2comp_lp = Connection(
@@ -81,7 +83,7 @@ comp_lp2intermed_heatex = Connection(
     compressor_lp, 'out1', intermediate_heatexchanger, 'in1', label='con06'
     )
 
-nw.add(hs_heatex2comp_lp, comp_lp2intermed_heatex)
+nw.add_conns(hs_heatex2comp_lp, comp_lp2intermed_heatex)
 
 # Expansion LP
 intermed_heatex2valve_lp = Connection(
@@ -91,14 +93,14 @@ valve_lp2cc_lp = Connection(
     valve_lp, 'out1', cycle_closer_lp, 'in1', label='con08'
     )
 
-nw.add(intermed_heatex2valve_lp, valve_lp2cc_lp)
+nw.add_conns(intermed_heatex2valve_lp, valve_lp2cc_lp)
 
 # High Pressure Cycle
 cc_hp2intermed_heatex = Connection(
     cycle_closer_hp, 'out1', intermediate_heatexchanger, 'in2', label='con09'
     )
 
-nw.add(cc_hp2intermed_heatex)
+nw.add_conns(cc_hp2intermed_heatex)
 
 # Compression LP
 intermed_heatex2comp_hp = Connection(
@@ -108,7 +110,7 @@ comp_hp2cond = Connection(
     compressor_hp, 'out1', condenser, 'in1', label='con11'
     )
 
-nw.add(intermed_heatex2comp_hp, comp_hp2cond)
+nw.add_conns(intermed_heatex2comp_hp, comp_hp2cond)
 
 # Heat Sink
 cons_back2cons_pump = Connection(
@@ -124,7 +126,9 @@ cons_hs2cons_feed = Connection(
     cons_heatsink, 'out1', cons_feedflow, 'in1', label='con15'
     )
 
-nw.add(cons_back2cons_pump, cons_pump2cond, cond2cons_hs, cons_hs2cons_feed)
+nw.add_conns(
+    cons_back2cons_pump, cons_pump2cond, cond2cons_hs, cons_hs2cons_feed
+    )
 
 # Expansion HP
 cond2valve_hp = Connection(
@@ -134,4 +138,4 @@ valve_hp2cc_hp = Connection(
     valve_hp, 'out1', cycle_closer_hp, 'in1', label='con17'
     )
 
-nw.add(cond2valve_hp, valve_hp2cc_hp)
+nw.add_conns(cond2valve_hp, valve_hp2cc_hp)

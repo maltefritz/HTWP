@@ -43,7 +43,7 @@ cycle_closer_hp = CycleCloser('Refrigerant Cycle Closer HP')
 
 # Heat Sink
 cons_backflow = Source('Consumer Back Flow')
-cons_pump = Pump('Heat Source Recirculation Pump')
+cons_pump = Pump('Heat Sink Recirculation Pump')
 condenser = Condenser('Heat Sink Condenser')
 cons_heatsink = HeatExchangerSimple('Heat Consumer')
 cons_feedflow = Sink('Consumer Feed Flow')

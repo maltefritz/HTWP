@@ -353,7 +353,7 @@ class Heatpump():
                             )
                 else:
                     self.set_conn(
-                        f'int_heatex{last_int_heatex}_{cycle}_to_comp {cycle}',
+                        f'int_heatex{last_int_heatex}_{cycle}_to_comp{cycle}',
                         f'Internal Heat Exchanger {last_int_heatex}_{cycle}',
                         'out2',
                         f'Compressor {cycle}', 'in1'
@@ -452,6 +452,34 @@ class Heatpump():
             label=label
             )
         self.nw.add_conns(self.connections[label])
+
+    def delete_component(self, component):
+        """
+        Delete component and all associated connections from Heatpump.
+
+        Parameters
+        ----------
+        component : str
+            label of component to be deleted
+        """
+        if component not in self.components.keys():
+            print(f'No component with label {component} found.')
+            return
+
+        del self.components[component]
+        print(f'Component {component} succesfully deleted from Heatpump.')
+
+        connections_copy = self.connections.copy()
+
+        for label, connection in self.connections.items():
+            is_source = component == connection.source.label
+            is_target = component == connection.target.label
+            if is_source or is_target:
+                self.nw.del_conns(connection)
+                del connections_copy[label]
+                print(f'Connection {label} succesfully deleted from Heatpump.')
+
+        self.connections = connections_copy
 
 
 if __name__ == '__main__':

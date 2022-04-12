@@ -545,7 +545,7 @@ class HeatpumpSingleStage(Heatpump):
             pr=0.99, design=['pr'], offdesign=['zeta']
             )
 
-        if param['int_heatex']:
+        if self.param['int_heatex']:
             self.components['Internal Heat Exchanger 1_1'].set_attr(
                 pr1=0.99, pr2=0.99,
                 offdesign=['zeta1', 'zeta2']
@@ -584,7 +584,7 @@ class HeatpumpSingleStage(Heatpump):
                 p=p_cond, fluid={'water': 0, self.param['refrigerant']: 1}
                 )
             self.connections['int_heatex1_1_to_cc1'].set_attr(
-                h=((h_bottom_right - h_top_left) * 0.02)
+                h=(h_top_left - (h_bottom_right - h_top_left) * 0.05)
                 )
 
         self.connections['cond1_to_consumer'].set_attr(
@@ -695,7 +695,7 @@ class HeatpumpSingleStage(Heatpump):
 
     def generate_logph(self, open_file=True):
         """Plot the heat pump cycle in logp-h-diagram of chosen refrigerant."""
-        if not param['int_heatex']:
+        if not self.param['int_heatex']:
             results = {
                 self.components['Valve 1'].label:
                     self.components['Valve 1'].get_plotting_data()[1],
@@ -724,7 +724,7 @@ class HeatpumpSingleStage(Heatpump):
                     self.components['Condenser 1'].get_plotting_data()[1]
                 }
 
-        diagram = FluidPropertyDiagram(fluid=param['refrigerant'])
+        diagram = FluidPropertyDiagram(fluid=self.param['refrigerant'])
         diagram.set_unit_system(T='°C', h='kJ/kg', p='bar')
 
         for key, data in results.items():
@@ -861,6 +861,7 @@ class HeatpumpSingleStage(Heatpump):
             os.startfile(filename)
 
 
+# %% Executable
 if __name__ == '__main__':
     # hp = Heatpump(
     #     ['water', 'NH3'], nr_cycles=2, int_heatex={2: [1, 2]},

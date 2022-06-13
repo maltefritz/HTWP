@@ -523,11 +523,11 @@ class HeatpumpSingleStage(Heatpump):
             )
 
         self.components['Compressor 1'].set_attr(
-            eta_s=0.85, design=['eta_s'], offdesign=['eta_s_char']
+            eta_s=0.75, design=['eta_s'], offdesign=['eta_s_char']
             )
 
         self.components['Condenser 1'].set_attr(
-            pr1=0.99, pr2=0.99, design=['pr2'],
+            pr1=0.98, pr2=0.98, design=['pr2'],
             offdesign=['zeta2', 'kA_char']
                     )
 
@@ -542,12 +542,12 @@ class HeatpumpSingleStage(Heatpump):
             )
 
         self.components['Consumer'].set_attr(
-            pr=0.99, design=['pr'], offdesign=['zeta']
+            pr=0.98, design=['pr'], offdesign=['zeta']
             )
 
         if self.param['int_heatex']:
             self.components['Internal Heat Exchanger 1_1'].set_attr(
-                pr1=0.99, pr2=0.99,
+                pr1=0.98, pr2=0.98,
                 offdesign=['zeta1', 'zeta2']
                 )
 
@@ -653,24 +653,24 @@ class HeatpumpSingleStage(Heatpump):
         if not self.param['int_heatex']:
             self.connections['evaporator1_to_comp1'].set_attr(p=None)
             self.components['Evaporator 1'].set_attr(
-                ttd_l=5, design=['pr1', 'ttd_l']
+                ttd_l=2, design=['pr1', 'ttd_l']
                 )
 
             self.connections['cond1_to_cc1'].set_attr(p=None)
             self.components['Condenser 1'].set_attr(
-                ttd_u=5, design=['pr2', 'ttd_u']
+                ttd_u=2, design=['pr2', 'ttd_u']
                 )
 
             self.connections['comp1_to_cond1'].set_attr(h=None)
         else:
             self.connections['evaporator1_to_int_heatex1_1'].set_attr(p=None)
             self.components['Evaporator 1'].set_attr(
-                ttd_l=5, design=['pr1', 'ttd_l']
+                ttd_l=2, design=['pr1', 'ttd_l']
                 )
 
             self.connections['cond1_to_int_heatex1_1'].set_attr(p=None)
             self.components['Condenser 1'].set_attr(
-                ttd_u=5, design=['pr2', 'ttd_u']
+                ttd_u=2, design=['pr2', 'ttd_u']
                 )
 
             self.connections['int_heatex1_1_to_cc1'].set_attr(h=None)
@@ -944,11 +944,11 @@ class HeatpumpDualStage(Heatpump):
             )
 
         self.components['Compressor 1'].set_attr(
-            eta_s=0.85, design=['eta_s'], offdesign=['eta_s_char']
+            eta_s=0.75, design=['eta_s'], offdesign=['eta_s_char']
             )
 
         self.components['Compressor 2'].set_attr(
-            eta_s=0.85, design=['eta_s'], offdesign=['eta_s_char']
+            eta_s=0.75, design=['eta_s'], offdesign=['eta_s_char']
             )
 
         kA_char1_default = ldc(
@@ -977,24 +977,24 @@ class HeatpumpDualStage(Heatpump):
             )
 
         self.components['Condenser 2'].set_attr(
-            pr1=0.99, pr2=0.99,
+            pr1=0.98, pr2=0.98,
             kA_char1=kA_char1_cond, kA_char2=kA_char2_default,
             design=['pr2'], offdesign=['zeta2', 'kA_char']
             )
 
         self.components['Consumer'].set_attr(
-            pr=0.99, design=['pr'], offdesign=['zeta']
+            pr=0.98, design=['pr'], offdesign=['zeta']
             )
 
         if self.param['int_heatex1']:
             self.components['Internal Heat Exchanger 1_1'].set_attr(
-                pr1=0.99, pr2=0.99,
+                pr1=0.98, pr2=0.98,
                 offdesign=['zeta1', 'zeta2']
                 )
 
         if self.param['int_heatex2']:
             self.components['Internal Heat Exchanger 2_2'].set_attr(
-                pr1=0.99, pr2=0.99,
+                pr1=0.98, pr2=0.98,
                 offdesign=['zeta1', 'zeta2']
                 )
 
@@ -1176,10 +1176,10 @@ class HeatpumpDualStage(Heatpump):
                 )
 
         self.components['Evaporator 1'].set_attr(
-            ttd_l=5, design=['pr1', 'ttd_l']
+            ttd_l=2, design=['pr1', 'ttd_l']
             )
         self.components['Heat Exchanger 1_2'].set_attr(
-            ttd_u=10, design=['pr2', 'ttd_u']
+            ttd_u=2, design=['pr2', 'ttd_u']
             )
 
         if not self.param['int_heatex2']:
@@ -1197,7 +1197,7 @@ class HeatpumpDualStage(Heatpump):
                 )
 
         self.components['Condenser 2'].set_attr(
-            ttd_u=5, design=['pr2', 'ttd_l']
+            ttd_u=2, design=['pr2', 'ttd_l']
             )
 
         self.solve_design()

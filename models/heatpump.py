@@ -1064,7 +1064,7 @@ class HeatpumpDualStage(Heatpump):
         if not self.param['int_heatex2']:
             self.connections['heatex1_2_to_comp2'].set_attr(x=1, p=p_evap2)
             self.connections['cond2_to_cc2'].set_attr(
-                p=p_cond1, fluid={
+                p=p_cond2, fluid={
                     'water': 0,
                     self.param['refrigerant1']: 0,
                     self.param['refrigerant2']: 1

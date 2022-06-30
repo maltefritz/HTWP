@@ -1209,7 +1209,9 @@ class HeatpumpDualStage(Heatpump):
         self.cop = abs(self.busses['heat'].P.val)/self.busses['power'].P.val
         print(f'COP = {self.cop:.4}')
 
-    def generate_logph(self, cycle, open_file=True):
+    def generate_logph(self, cycle, xlims=(100, 600), ylims=(1e0, 3e2),
+                       display_info=True, return_diagram=False,
+                       save_file=True, open_file=True):
         """Plot the heat pump cycle in logp-h-diagram of chosen refrigerant."""
         label_he = 'Heat Exchanger 1_2'
         if cycle == 1:
@@ -1280,6 +1282,7 @@ class HeatpumpDualStage(Heatpump):
                 )
 
         isoT = np.arange(-100, 350, 25)
+        isoS = np.arange(0, 10000, 500)
 
         ymin = 1e0
         ymax = 3e2
@@ -1338,7 +1341,9 @@ class HeatpumpDualStage(Heatpump):
         # draw isolines
         diagram.set_isolines(T=isoT, s=isoS)
         diagram.calc_isolines()
-        diagram.set_limits(x_min=xmin, x_max=xmax, y_min=ymin, y_max=ymax)
+        diagram.set_limits(
+            x_min=xlims[0], x_max=xlims[1], y_min=ylims[0], y_max=ylims[1]
+            )
         diagram.draw_isolines(diagram_type='logph')
 
         for i, key in enumerate(results.keys()):
@@ -1368,73 +1373,78 @@ class HeatpumpDualStage(Heatpump):
                     ha='center', va='center', color='w'
                     )
 
-        # display info box containing key parameters
-        info = (
-            '$\\bf{{Wärmepumpe}}$\n'
-            + f'Setup {self.param["setup"]}\n'
-            + 'Betriebsdaten:\n'
-            + f'\t $\\dot{{Q}}_N = ${abs(self.param["Q_N"])*1e-6:.3} $MW$\n'
-            + f'\t $COP = ${self.cop:.2f}\n'
-            + 'Kältemittel:\n'
-            + '\t $' + self.param[f'refrigerant{cycle}'] + '$\n'
-            + 'Wärmequelle:\n'
-            + f'\t $T_{{VL}} = ${self.param["T_heatsource_ff"]} °C\n'
-            + f'\t $T_{{RL}} = ${self.param["T_heatsource_bf"]} °C\n'
-            + 'Mitteltemperatur:\n'
-            + f'\t $T_{{mid}} = $' + str(self.param['T_mid']) + '°C\n'
-            )
-
-        if self.param[f'int_heatex{cycle}']:
-            info += (
-                'Unterkühlung/Überhitzung:\n'
-                + '\t $\\Delta T_{{IHX}} = $'
-                + self.param[f'deltaT_int_heatex{cycle}']
-                + ' °C\n'
+        if display_info:
+            # display info box containing key parameters
+            info = (
+                '$\\bf{{Wärmepumpe}}$\n'
+                + f'Setup {self.param["setup"]}\n'
+                + 'Betriebsdaten:\n'
+                + f'\t $\\dot{{Q}}_N = ${abs(self.param["Q_N"])*1e-6:.3} $MW$\n'
+                + f'\t $COP = ${self.cop:.2f}\n'
+                + 'Kältemittel:\n'
+                + '\t $' + self.param[f'refrigerant{cycle}'] + '$\n'
+                + 'Wärmequelle:\n'
+                + f'\t $T_{{VL}} = ${self.param["T_heatsource_ff"]} °C\n'
+                + f'\t $T_{{RL}} = ${self.param["T_heatsource_bf"]} °C\n'
+                + 'Mitteltemperatur:\n'
+                + f'\t $T_{{mid}} = $' + str(self.param['T_mid']) + '°C\n'
                 )
 
-        info += (
-            'Wärmesenke:\n'
-            + f'\t $T_{{VL}} = ${self.param["T_consumer_ff"]} °C\n'
-            + f'\t $T_{{RL}} = ${self.param["T_consumer_bf"]} °C'
-            )
+            if self.param[f'int_heatex{cycle}']:
+                info += (
+                    'Unterkühlung/Überhitzung:\n'
+                    + '\t $\\Delta T_{{IHX}} = $'
+                    + self.param[f'deltaT_int_heatex{cycle}']
+                    + ' °C\n'
+                    )
 
-        diagram.ax.annotate(
-            info, infocoords, xycoords='axes fraction',
-            ha='left', va='center', color='k',
-            bbox=dict(boxstyle='round,pad=0.3', fc='white')
-            )
+            info += (
+                'Wärmesenke:\n'
+                + f'\t $T_{{VL}} = ${self.param["T_consumer_ff"]} °C\n'
+                + f'\t $T_{{RL}} = ${self.param["T_consumer_bf"]} °C'
+                )
+
+            diagram.ax.annotate(
+                info, infocoords, xycoords='axes fraction',
+                ha='left', va='center', color='k',
+                bbox=dict(boxstyle='round,pad=0.3', fc='white')
+                )
 
         diagram.ax.legend(loc='upper left')
-        diagram.ax.set_xlim(xmin, xmax)
-        diagram.ax.set_ylim(ymin, ymax)
+        diagram.ax.set_xlim(xlims[0], xlims[1])
+        diagram.ax.set_ylim(ylims[0], ylims[1])
 
-        if cycle == 1:
-            temp_level = 'lowtemp'
-        elif cycle == 2:
-            temp_level = 'hightemp'
+        if save_file:
+            if cycle == 1:
+                temp_level = 'lowtemp'
+            elif cycle == 2:
+                temp_level = 'hightemp'
 
-        if not self.param[f'int_heatex{cycle}']:
-            filename = (
-                f'Diagramme\\Setup_{self.param["setup"]}\\'
-                + 'logph_'
-                + self.param[f'refrigerant{cycle}']
-                + f'_{self.param["T_heatsource_bf"]}'
-                + f'_{self.param["T_consumer_ff"]}_{temp_level}.pdf'
-                )
-        else:
-            filename = (
-                f'Diagramme\\Setup_{self.param["setup"]}\\'
-                + f'logph_'
-                + self.param[f'refrigerant{cycle}']
-                + f'_{self.param["T_heatsource_bf"]}'
-                + f'_{self.param["T_consumer_ff"]}_dT'
-                + self.param[f'deltaT_int_heatex{cycle}']
-                + f'K_{temp_level}.pdf'
-                )
+            if not self.param[f'int_heatex{cycle}']:
+                filename = (
+                    f'Diagramme\\Setup_{self.param["setup"]}\\'
+                    + 'logph_'
+                    + self.param[f'refrigerant{cycle}']
+                    + f'_{self.param["T_heatsource_bf"]}'
+                    + f'_{self.param["T_consumer_ff"]}_{temp_level}.pdf'
+                    )
+            else:
+                filename = (
+                    f'Diagramme\\Setup_{self.param["setup"]}\\'
+                    + f'logph_'
+                    + self.param[f'refrigerant{cycle}']
+                    + f'_{self.param["T_heatsource_bf"]}'
+                    + f'_{self.param["T_consumer_ff"]}_dT'
+                    + self.param[f'deltaT_int_heatex{cycle}']
+                    + f'K_{temp_level}.pdf'
+                    )
 
-        diagram.save(filename)
-        if open_file:
-            os.startfile(filename)
+            diagram.save(filename)
+            if open_file:
+                os.startfile(filename)
+
+        if return_diagram:
+            return diagram
 
 
 # %% Executable

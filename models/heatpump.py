@@ -548,7 +548,7 @@ class HeatpumpSingleStage(Heatpump):
         if self.param['int_heatex']:
             self.components['Internal Heat Exchanger 1_1'].set_attr(
                 pr1=0.98, pr2=0.98,
-                offdesign=['zeta1', 'zeta2']
+                design=['pr1', 'pr2'], offdesign=['zeta1', 'zeta2']
                 )
 
     def init_simulation(self):

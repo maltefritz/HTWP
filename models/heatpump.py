@@ -554,20 +554,20 @@ class HeatpumpSingleStage(Heatpump):
     def init_simulation(self):
         """Perform initial connection parametrization with starting values."""
         h_bottom_right = CP.PropsSI(
-            'H', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 5 + 273,
+            'H', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 2 + 273,
             self.param['refrigerant']
             ) * 1e-3
         p_evap = CP.PropsSI(
-            'P', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 5 + 273,
+            'P', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 2 + 273,
             self.param['refrigerant']
             ) * 1e-5
 
         h_top_left = CP.PropsSI(
-            'H', 'Q', 0, 'T', self.param['T_consumer_ff'] + 5 + 273,
+            'H', 'Q', 0, 'T', self.param['T_consumer_ff'] + 2 + 273,
             self.param['refrigerant']
             ) * 1e-3
         p_cond = CP.PropsSI(
-            'P', 'Q', 0, 'T', self.param['T_consumer_ff'] + 5 + 273,
+            'P', 'Q', 0, 'T', self.param['T_consumer_ff'] + 2 + 273,
             self.param['refrigerant']
             ) * 1e-5
 
@@ -994,39 +994,39 @@ class HeatpumpDualStage(Heatpump):
         """Perform initial connection parametrization with starting values."""
         # Low pressure cycle
         h_bottom_right1 = CP.PropsSI(
-            'H', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 5 + 273,
+            'H', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 2 + 273,
             self.param['refrigerant1']
             ) * 1e-3
         p_evap1 = CP.PropsSI(
-            'P', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 5 + 273,
+            'P', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 2 + 273,
             self.param['refrigerant1']
             ) * 1e-5
 
         h_top_left1 = CP.PropsSI(
-            'H', 'Q', 0, 'T', self.param['T_mid'] + 5 + 273,
+            'H', 'Q', 0, 'T', self.param['T_mid'] + 2 + 273,
             self.param['refrigerant1']
             ) * 1e-3
         p_cond1 = CP.PropsSI(
-            'P', 'Q', 0, 'T', self.param['T_mid'] + 5 + 273,
+            'P', 'Q', 0, 'T', self.param['T_mid'] + 2 + 273,
             self.param['refrigerant1']
             ) * 1e-5
 
         # High pressure cycle
         h_bottom_right2 = CP.PropsSI(
-            'H', 'Q', 1, 'T', self.param['T_mid'] - 5 + 273,
+            'H', 'Q', 1, 'T', self.param['T_mid'] - 2 + 273,
             self.param['refrigerant2']
             ) * 1e-3
         p_evap2 = CP.PropsSI(
-            'P', 'Q', 1, 'T', self.param['T_mid'] - 5 + 273,
+            'P', 'Q', 1, 'T', self.param['T_mid'] - 2 + 273,
             self.param['refrigerant2']
             ) * 1e-5
 
         h_top_left2 = CP.PropsSI(
-            'H', 'Q', 0, 'T', self.param['T_consumer_ff'] + 5 + 273,
+            'H', 'Q', 0, 'T', self.param['T_consumer_ff'] + 2 + 273,
             self.param['refrigerant2']
             ) * 1e-3
         p_cond2 = CP.PropsSI(
-            'P', 'Q', 0, 'T', self.param['T_consumer_ff'] + 5 + 273,
+            'P', 'Q', 0, 'T', self.param['T_consumer_ff'] + 2 + 273,
             self.param['refrigerant2']
             ) * 1e-5
 

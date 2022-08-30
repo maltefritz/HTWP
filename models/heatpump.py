@@ -500,14 +500,14 @@ class HeatpumpSingleStage(Heatpump):
     """
 
     def __init__(self, param):
-        fluids = ['water', param['refrigerant']]
+        self.param = param
+        fluids = ['water', self.param['design']['refrigerant']]
 
-        if not param['int_heatex']:
+        if not self.param['design']['int_heatex']:
             Heatpump.__init__(self, fluids, nr_cycles=1)
         else:
             Heatpump.__init__(self, fluids, nr_cycles=1, int_heatex={1: 1})
 
-        self.param = param
         self.parametrize_components()
         self.busses = dict()
         self.initialized = False
@@ -545,7 +545,7 @@ class HeatpumpSingleStage(Heatpump):
             pr=0.98, design=['pr'], offdesign=['zeta']
             )
 
-        if self.param['int_heatex']:
+        if self.param['design']['int_heatex']:
             self.components['Internal Heat Exchanger 1_1'].set_attr(
                 pr1=0.98, pr2=0.98,
                 design=['pr1', 'pr2'], offdesign=['zeta1', 'zeta2']
@@ -554,56 +554,56 @@ class HeatpumpSingleStage(Heatpump):
     def init_simulation(self):
         """Perform initial connection parametrization with starting values."""
         h_bottom_right = CP.PropsSI(
-            'H', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 2 + 273,
-            self.param['refrigerant']
+            'H', 'Q', 1, 'T', self.param['design']['T_heatsource_bf'] - 2 + 273,
+            self.param['design']['refrigerant']
             ) * 1e-3
         p_evap = CP.PropsSI(
-            'P', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 2 + 273,
-            self.param['refrigerant']
+            'P', 'Q', 1, 'T', self.param['design']['T_heatsource_bf'] - 2 + 273,
+            self.param['design']['refrigerant']
             ) * 1e-5
 
         h_top_left = CP.PropsSI(
-            'H', 'Q', 0, 'T', self.param['T_consumer_ff'] + 2 + 273,
-            self.param['refrigerant']
+            'H', 'Q', 0, 'T', self.param['design']['T_consumer_ff'] + 2 + 273,
+            self.param['design']['refrigerant']
             ) * 1e-3
         p_cond = CP.PropsSI(
-            'P', 'Q', 0, 'T', self.param['T_consumer_ff'] + 2 + 273,
-            self.param['refrigerant']
+            'P', 'Q', 0, 'T', self.param['design']['T_consumer_ff'] + 2 + 273,
+            self.param['design']['refrigerant']
             ) * 1e-5
 
-        if not self.param['int_heatex']:
+        if not self.param['design']['int_heatex']:
             self.connections['evaporator1_to_comp1'].set_attr(x=1, p=p_evap)
             self.connections['cond1_to_cc1'].set_attr(
-                p=p_cond, fluid={'water': 0, self.param['refrigerant']: 1}
+                p=p_cond, fluid={'water': 0, self.param['design']['refrigerant']: 1}
                 )
         else:
             self.connections['evaporator1_to_int_heatex1_1'].set_attr(
                 x=1, p=p_evap
                 )
             self.connections['cond1_to_int_heatex1_1'].set_attr(
-                p=p_cond, fluid={'water': 0, self.param['refrigerant']: 1}
+                p=p_cond, fluid={'water': 0, self.param['design']['refrigerant']: 1}
                 )
             self.connections['int_heatex1_1_to_cc1'].set_attr(
                 h=(h_top_left - (h_bottom_right - h_top_left) * 0.05)
                 )
 
         self.connections['cond1_to_consumer'].set_attr(
-            T=self.param['T_consumer_ff'], p=self.param['p_consumer_ff'],
-            fluid={'water': 1, self.param['refrigerant']: 0}
+            T=self.param['design']['T_consumer_ff'], p=self.param['design']['p_consumer_ff'],
+            fluid={'water': 1, self.param['design']['refrigerant']: 0}
             )
 
         self.connections['consumer_to_heatsink_cc'].set_attr(
-            T=self.param['T_consumer_bf']
+            T=self.param['design']['T_consumer_bf']
             )
 
         self.connections['heatsource_ff_to_heatsource_pump'].set_attr(
-            T=self.param['T_heatsource_ff'], p=self.param['p_heatsource_ff'],
-            fluid={'water': 1, self.param['refrigerant']: 0},
+            T=self.param['design']['T_heatsource_ff'], p=self.param['design']['p_heatsource_ff'],
+            fluid={'water': 1, self.param['design']['refrigerant']: 0},
             offdesign=['v']
             )
 
         self.connections['evaporator1_to_heatsource_bf'].set_attr(
-            T=self.param['T_heatsource_bf'], p=self.param['p_heatsource_ff'],
+            T=self.param['design']['T_heatsource_bf'], p=self.param['design']['p_heatsource_ff'],
             design=['T']
             )
 
@@ -635,7 +635,7 @@ class HeatpumpSingleStage(Heatpump):
 
         self.nw.add_busses(self.busses['power'], self.busses['heat'])
 
-        self.busses['heat'].set_attr(P=self.param['Q_N'])
+        self.busses['heat'].set_attr(P=self.param['design']['Q_N'])
 
         self.solve_design()
         self.initialized = True
@@ -650,7 +650,7 @@ class HeatpumpSingleStage(Heatpump):
                 )
             return
 
-        if not self.param['int_heatex']:
+        if not self.param['design']['int_heatex']:
             self.connections['evaporator1_to_comp1'].set_attr(p=None)
             self.components['Evaporator 1'].set_attr(ttd_l=2)
 
@@ -669,7 +669,7 @@ class HeatpumpSingleStage(Heatpump):
             self.connections['int_heatex1_1_to_comp1'].set_attr(
                 T=Ref(
                     self.connections['evaporator1_to_int_heatex1_1'],
-                    1, self.param['deltaT_int_heatex']
+                    1, self.param['design']['deltaT_int_heatex']
                     )
                 )
 
@@ -686,7 +686,7 @@ class HeatpumpSingleStage(Heatpump):
                        display_info=True, return_diagram=False,
                        save_file=True, open_file=True):
         """Plot the heat pump cycle in logp-h-diagram of chosen refrigerant."""
-        if not self.param['int_heatex']:
+        if not self.param['design']['int_heatex']:
             results = {
                 self.components['Valve 1'].label:
                     self.components['Valve 1'].get_plotting_data()[1],
@@ -715,7 +715,7 @@ class HeatpumpSingleStage(Heatpump):
                     self.components['Condenser 1'].get_plotting_data()[1]
                 }
 
-        diagram = FluidPropertyDiagram(fluid=self.param['refrigerant'])
+        diagram = FluidPropertyDiagram(fluid=self.param['design']['refrigerant'])
         diagram.set_unit_system(T='°C', h='kJ/kg', p='bar')
 
         for key, data in results.items():
@@ -726,7 +726,7 @@ class HeatpumpSingleStage(Heatpump):
         isoT = np.arange(-100, 350, 25)
         isoS = np.arange(0, 10000, 500)
 
-        if self.param['refrigerant'] == 'NH3':
+        if self.param['design']['refrigerant'] == 'NH3':
             isoS = np.arange(0, 10000, 500)
 
             xmin = 250
@@ -734,7 +734,7 @@ class HeatpumpSingleStage(Heatpump):
 
             infocoords = (0.9, 0.87)
 
-        elif self.param['refrigerant'] == 'R1234ZE':
+        elif self.param['design']['refrigerant'] == 'R1234ZE':
             isoS = np.arange(0, 2200, 50)
 
             xmin = 150
@@ -742,7 +742,7 @@ class HeatpumpSingleStage(Heatpump):
 
             infocoords = (0.9, 0.87)
 
-        elif self.param['refrigerant'] == 'R134A':
+        elif self.param['design']['refrigerant'] == 'R134A':
             isoS = np.arange(0, 3000, 100)
 
             xmin = 100
@@ -750,7 +750,7 @@ class HeatpumpSingleStage(Heatpump):
 
             infocoords = (0.895, 0.8775)
 
-        elif self.param['refrigerant'] == 'R245FA':
+        elif self.param['design']['refrigerant'] == 'R245FA':
             isoS = np.arange(0, 4000, 100)
 
             xmin = 100
@@ -798,29 +798,29 @@ class HeatpumpSingleStage(Heatpump):
             # display info box containing key parameters
             info = (
                 '$\\bf{{Wärmepumpe}}$\n'
-                + f'Setup {self.param["setup"]}\n'
+                + f'Setup {self.param["design"]["setup"]}\n'
                 + 'Betriebsdaten:\n'
-                + f'\t $\\dot{{Q}}_N = ${abs(self.param["Q_N"])*1e-6:.3} '
+                + f'\t $\\dot{{Q}}_N = ${abs(self.param["design"]["Q_N"])*1e-6:.3} '
                 + '$MW$\n'
                 + f'\t $COP = ${self.cop:.2f}\n'
                 + 'Kältemittel:\n'
-                + f'\t ${self.param["refrigerant"]}$\n'
+                + f'\t ${self.param["design"]["refrigerant"]}$\n'
                 + 'Wärmequelle:\n'
-                + f'\t $T_{{VL}} = ${self.param["T_heatsource_ff"]} °C\n'
-                + f'\t $T_{{RL}} = ${self.param["T_heatsource_bf"]} °C\n'
+                + f'\t $T_{{VL}} = ${self.param["design"]["T_heatsource_ff"]} °C\n'
+                + f'\t $T_{{RL}} = ${self.param["design"]["T_heatsource_bf"]} °C\n'
                 )
 
-            if self.param['int_heatex']:
+            if self.param['design']['int_heatex']:
                 info += (
                     'Unterkühlung/Überhitzung:\n'
                     + f'\t $\\Delta T_{{IHX}} = $'
-                    + f'{self.param["deltaT_int_heatex"]} °C\n'
+                    + f'{self.param["design"]["deltaT_int_heatex"]} °C\n'
                     )
 
             info += (
                 'Wärmesenke:\n'
-                + f'\t $T_{{VL}} = ${self.param["T_consumer_ff"]} °C\n'
-                + f'\t $T_{{RL}} = ${self.param["T_consumer_bf"]} °C'
+                + f'\t $T_{{VL}} = ${self.param["design"]["T_consumer_ff"]} °C\n'
+                + f'\t $T_{{RL}} = ${self.param["design"]["T_consumer_bf"]} °C'
                 )
 
             diagram.ax.annotate(
@@ -834,20 +834,20 @@ class HeatpumpSingleStage(Heatpump):
         diagram.ax.set_ylim(ylims[0], ylims[1])
 
         if save_file:
-            if not self.param['int_heatex']:
+            if not self.param['design']['int_heatex']:
                 filename = (
-                    f'Diagramme\\Setup_{self.param["setup"]}\\'
-                    + f'logph_{self.param["refrigerant"]}'
-                    + f'_{self.param["T_heatsource_bf"]}'
-                    + f'_{self.param["T_consumer_ff"]}.pdf'
+                    f'Diagramme\\Setup_{self.param["design"]["setup"]}\\'
+                    + f'logph_{self.param["design"]["refrigerant"]}'
+                    + f'_{self.param["design"]["T_heatsource_bf"]}'
+                    + f'_{self.param["design"]["T_consumer_ff"]}.pdf'
                     )
             else:
                 filename = (
-                    f'Diagramme\\Setup_{self.param["setup"]}\\'
-                    + f'logph_{self.param["refrigerant"]}'
-                    + f'_{self.param["T_heatsource_bf"]}'
-                    + f'_{self.param["T_consumer_ff"]}'
-                    + f'_dT{self.param["deltaT_int_heatex"]}K.pdf'
+                    f'Diagramme\\Setup_{self.param["design"]["setup"]}\\'
+                    + f'logph_{self.param["design"]["refrigerant"]}'
+                    + f'_{self.param["design"]["T_heatsource_bf"]}'
+                    + f'_{self.param["design"]["T_consumer_ff"]}'
+                    + f'_dT{self.param["design"]["deltaT_int_heatex"]}K.pdf'
                     )
 
             diagram.save(filename)
@@ -856,6 +856,107 @@ class HeatpumpSingleStage(Heatpump):
 
         if return_diagram:
             return diagram
+
+    def offdesign_simulation(self):
+        """Calculate partload characteristic of single stage heat pump."""
+
+        self.m_design = self.connections('valve1_to_evaporator1').m.val
+        self.T_hs_ff_range = np.linspace(
+            self.param['offdesign']['T_hs_ff_start'],
+            self.param['offdesign']['T_hs_ff_end'],
+            self.param['offdesign']['T_hs_ff_steps']
+            )
+        self.T_cons_ff_range = np.linspace(
+            self.param['offdesign']['T_cons_ff_start'],
+            self.param['offdesign']['T_cons_ff_end'],
+            self.param['offdesign']['T_cons_ff_steps']
+            )
+        self.pl_range = (
+            self.param['offdesign']['partload_min'],
+            self.param['offdesign']['partload_max'],
+            self.param['offdesign']['partload_steps']
+            )
+        deltaT_hs = (
+            self.param['design']['T_heatsource_ff']
+            - self.param['design']['T_heatsource_bf']
+            )
+
+        self.Q_array = list()
+        self.P_array = list()
+        self.offdesign_results = dict()
+        for T_hs_ff in self.T_hs_ff_range:
+            Q_subarray = list()
+            P_subarray = list()
+            self.offdesign_results[T_hs_ff] = dict()
+            self.connections('heatsource_ff_to_heatsource_pump').set_attr(
+                T=T_hs_ff
+                )
+            self.connections('evaporator1_to_heatsource_bf').set_attr(
+                T=T_hs_ff-deltaT_hs
+                )
+            for T_cons_ff in self.T_cons_ff_range:
+                self.connections('cond1_to_consumer').set_attr(T=T_cons_ff)
+                Q_subsubarray = list()
+                P_subsubarray = list()
+                self.offdesign_results[T_hs_ff][T_cons_ff] = dict()
+                for pl in self.pl_range[::-1]:
+                    print(
+                        f'### Temp. HS = {T_hs_ff} °C, Temp. Cons = '
+                        + f'{T_cons_ff} °C, Partload = {pl*100} % ###'
+                        )
+                    self.init_path = None
+                    no_init_path = (
+                        (T_cons_ff != self.T_cons_ff_range[0])
+                        and (pl == self.pl_range[-1])
+                        )
+                    if no_init_path:
+                        if self.param['design']['int_heatex']:
+                            self.init_path = 'hp_ss_int_heatex_init'
+                        else:
+                            self.init_path = 'hp_ss_init'
+                    self.connections('cond1_to_consumer').set_attr(T=T_cons_ff)
+                    self.busses['heat'].set_attr(P=None)
+                    self.connections('valve1_to_evaporator1').set_attr(
+                        m=pl * self.m_design
+                        )
+
+                    if self.param['design']['int_heatex']:
+                        self.design_path = 'hp_ss_int_heatex_stable'
+                    else:
+                        self.design_path = 'hp_ss_stable'
+                    # def solve_offdesign?
+                    self.nw.solve(
+                        'offdesign', design_path=self.design_path,
+                        init_path=self.init_path
+                        )
+
+                    if pl == self.pl_range[-1] and self.res[-1] < 1e-3:
+                        if self.param['design']['int_heatex']:
+                            self.nw.save('hp_ss_int_heatex_init')
+                        else:
+                            self.nw.save('hp_ss_init')
+
+                    Q_subsubarray += [self.busses["heat"].P.val * 1e-6]
+                    P_subsubarray += [
+                        self.hp.busses["power"].P.val * 1e-6
+                        ]
+                    self.offdesign_results[T_hs_ff][T_cons_ff][pl] = {
+                        'P': P_subsubarray[-1],
+                        'Q': abs(Q_subsubarray[-1]),
+                        'COP':  abs(Q_subsubarray[-1])/P_subsubarray[-1]
+                        }
+                Q_subarray += [Q_subsubarray[::-1]]
+                P_subarray += [P_subsubarray[::-1]]
+            self.Q_array += [Q_subarray]
+            self.P_array += [P_subarray]
+        if self.param['offdesign']['save_results']:
+            if self.param['design']['int_heatex']:
+                path = 'hp_ss_int_heatex_partload.json'
+            else:
+                path = 'hp_ss_partload.json'
+
+            with open(path, 'w') as file:
+                json.dump(self.offdesign_results, file, indent=4)
 
 
 class HeatpumpDualStage(Heatpump):
@@ -869,20 +970,20 @@ class HeatpumpDualStage(Heatpump):
     """
 
     def __init__(self, param):
-        fluids = ['water', param['refrigerant1'], param['refrigerant2']]
+        self.param = param
+        fluids = ['water', self.param['design']['refrigerant1'], self.param['design']['refrigerant2']]
 
-        if not param['int_heatex1'] and not param['int_heatex2']:
+        if not self.param['design']['int_heatex1'] and not self.param['design']['int_heatex2']:
             Heatpump.__init__(self, fluids, nr_cycles=2)
-        elif param['int_heatex1'] and not param['int_heatex2']:
+        elif self.param['design']['int_heatex1'] and not self.param['design']['int_heatex2']:
             Heatpump.__init__(self, fluids, nr_cycles=2, int_heatex={1: 1})
-        elif not param['int_heatex1'] and param['int_heatex2']:
+        elif not self.param['design']['int_heatex1'] and self.param['design']['int_heatex2']:
             Heatpump.__init__(self, fluids, nr_cycles=2, int_heatex={2: 2})
-        elif param['int_heatex1'] and param['int_heatex2']:
+        elif self.param['design']['int_heatex1'] and self.param['design']['int_heatex2']:
             Heatpump.__init__(
                 self, fluids, nr_cycles=2, int_heatex={1: 1, 2: 2}
                 )
 
-        self.param = param
         self.parametrize_components()
         self.busses = dict()
         self.initialized = False
@@ -897,7 +998,7 @@ class HeatpumpDualStage(Heatpump):
             'Compressor 1', 'out1',
             'Heat Exchanger 1_2', 'in1'
             )
-        if not self.param['int_heatex1']:
+        if not self.param['design']['int_heatex1']:
             self.set_conn(
                 'heatex1_2_to_cc1',
                 'Heat Exchanger 1_2', 'out1',
@@ -909,7 +1010,7 @@ class HeatpumpDualStage(Heatpump):
                 'Heat Exchanger 1_2', 'out1',
                 'Internal Heat Exchanger 1_1', 'in1'
                 )
-        if not self.param['int_heatex2']:
+        if not self.param['design']['int_heatex2']:
             self.set_conn(
                 'heatex1_2_to_comp2',
                 'Heat Exchanger 1_2', 'out2',
@@ -978,13 +1079,13 @@ class HeatpumpDualStage(Heatpump):
             pr=0.98, design=['pr'], offdesign=['zeta']
             )
 
-        if self.param['int_heatex1']:
+        if self.param['design']['int_heatex1']:
             self.components['Internal Heat Exchanger 1_1'].set_attr(
                 pr1=0.98, pr2=0.98,
                 offdesign=['zeta1', 'zeta2']
                 )
 
-        if self.param['int_heatex2']:
+        if self.param['design']['int_heatex2']:
             self.components['Internal Heat Exchanger 2_2'].set_attr(
                 pr1=0.98, pr2=0.98,
                 offdesign=['zeta1', 'zeta2']
@@ -994,49 +1095,49 @@ class HeatpumpDualStage(Heatpump):
         """Perform initial connection parametrization with starting values."""
         # Low pressure cycle
         h_bottom_right1 = CP.PropsSI(
-            'H', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 2 + 273,
-            self.param['refrigerant1']
+            'H', 'Q', 1, 'T', self.param['design']['T_heatsource_bf'] - 2 + 273,
+            self.param['design']['refrigerant1']
             ) * 1e-3
         p_evap1 = CP.PropsSI(
-            'P', 'Q', 1, 'T', self.param['T_heatsource_bf'] - 2 + 273,
-            self.param['refrigerant1']
+            'P', 'Q', 1, 'T', self.param['design']['T_heatsource_bf'] - 2 + 273,
+            self.param['design']['refrigerant1']
             ) * 1e-5
 
         h_top_left1 = CP.PropsSI(
-            'H', 'Q', 0, 'T', self.param['T_mid'] + 2 + 273,
-            self.param['refrigerant1']
+            'H', 'Q', 0, 'T', self.param['design']['T_mid'] + 2 + 273,
+            self.param['design']['refrigerant1']
             ) * 1e-3
         p_cond1 = CP.PropsSI(
-            'P', 'Q', 0, 'T', self.param['T_mid'] + 2 + 273,
-            self.param['refrigerant1']
+            'P', 'Q', 0, 'T', self.param['design']['T_mid'] + 2 + 273,
+            self.param['design']['refrigerant1']
             ) * 1e-5
 
         # High pressure cycle
         h_bottom_right2 = CP.PropsSI(
-            'H', 'Q', 1, 'T', self.param['T_mid'] - 2 + 273,
-            self.param['refrigerant2']
+            'H', 'Q', 1, 'T', self.param['design']['T_mid'] - 2 + 273,
+            self.param['design']['refrigerant2']
             ) * 1e-3
         p_evap2 = CP.PropsSI(
-            'P', 'Q', 1, 'T', self.param['T_mid'] - 2 + 273,
-            self.param['refrigerant2']
+            'P', 'Q', 1, 'T', self.param['design']['T_mid'] - 2 + 273,
+            self.param['design']['refrigerant2']
             ) * 1e-5
 
         h_top_left2 = CP.PropsSI(
-            'H', 'Q', 0, 'T', self.param['T_consumer_ff'] + 2 + 273,
-            self.param['refrigerant2']
+            'H', 'Q', 0, 'T', self.param['design']['T_consumer_ff'] + 2 + 273,
+            self.param['design']['refrigerant2']
             ) * 1e-3
         p_cond2 = CP.PropsSI(
-            'P', 'Q', 0, 'T', self.param['T_consumer_ff'] + 2 + 273,
-            self.param['refrigerant2']
+            'P', 'Q', 0, 'T', self.param['design']['T_consumer_ff'] + 2 + 273,
+            self.param['design']['refrigerant2']
             ) * 1e-5
 
-        if not self.param['int_heatex1']:
+        if not self.param['design']['int_heatex1']:
             self.connections['evaporator1_to_comp1'].set_attr(x=1, p=p_evap1)
             self.connections['heatex1_2_to_cc1'].set_attr(
                 p=p_cond1, fluid={
                     'water': 0,
-                    self.param['refrigerant1']: 1,
-                    self.param['refrigerant2']: 0
+                    self.param['design']['refrigerant1']: 1,
+                    self.param['design']['refrigerant2']: 0
                     }
                 )
         else:
@@ -1046,20 +1147,20 @@ class HeatpumpDualStage(Heatpump):
             self.connections['heatex1_2_to_int_heatex1_1'].set_attr(
                 p=p_cond1, fluid={
                     'water': 0,
-                    self.param['refrigerant1']: 1,
-                    self.param['refrigerant2']: 0
+                    self.param['design']['refrigerant1']: 1,
+                    self.param['design']['refrigerant2']: 0
                     }
                 )
             self.connections['int_heatex1_1_to_cc1'].set_attr(
                 h=(h_top_left1 - (h_bottom_right1 - h_top_left1) * 0.05)
                 )
-        if not self.param['int_heatex2']:
+        if not self.param['design']['int_heatex2']:
             self.connections['heatex1_2_to_comp2'].set_attr(x=1, p=p_evap2)
             self.connections['cond2_to_cc2'].set_attr(
                 p=p_cond2, fluid={
                     'water': 0,
-                    self.param['refrigerant1']: 0,
-                    self.param['refrigerant2']: 1
+                    self.param['design']['refrigerant1']: 0,
+                    self.param['design']['refrigerant2']: 1
                     }
                 )
         else:
@@ -1069,8 +1170,8 @@ class HeatpumpDualStage(Heatpump):
             self.connections['cond2_to_int_heatex2_2'].set_attr(
                 p=p_cond2, fluid={
                     'water': 0,
-                    self.param['refrigerant1']: 0,
-                    self.param['refrigerant2']: 1
+                    self.param['design']['refrigerant1']: 0,
+                    self.param['design']['refrigerant2']: 1
                     }
                 )
             self.connections['int_heatex2_2_to_cc2'].set_attr(
@@ -1078,30 +1179,30 @@ class HeatpumpDualStage(Heatpump):
                 )
 
         self.connections['cond2_to_consumer'].set_attr(
-            T=self.param['T_consumer_ff'], p=self.param['p_consumer_ff'],
+            T=self.param['design']['T_consumer_ff'], p=self.param['design']['p_consumer_ff'],
             fluid={
                 'water': 1,
-                self.param['refrigerant1']: 0,
-                self.param['refrigerant2']: 0
+                self.param['design']['refrigerant1']: 0,
+                self.param['design']['refrigerant2']: 0
                 }
             )
 
         self.connections['consumer_to_heatsink_cc'].set_attr(
-            T=self.param['T_consumer_bf']
+            T=self.param['design']['T_consumer_bf']
             )
 
         self.connections['heatsource_ff_to_heatsource_pump'].set_attr(
-            T=self.param['T_heatsource_ff'], p=self.param['p_heatsource_ff'],
+            T=self.param['design']['T_heatsource_ff'], p=self.param['design']['p_heatsource_ff'],
             fluid={
                 'water': 1,
-                self.param['refrigerant1']: 0,
-                self.param['refrigerant2']: 0
+                self.param['design']['refrigerant1']: 0,
+                self.param['design']['refrigerant2']: 0
                 },
             offdesign=['v']
             )
 
         self.connections['evaporator1_to_heatsource_bf'].set_attr(
-            T=self.param['T_heatsource_bf'], p=self.param['p_heatsource_ff'],
+            T=self.param['design']['T_heatsource_bf'], p=self.param['design']['p_heatsource_ff'],
             design=['T']
             )
 
@@ -1134,7 +1235,7 @@ class HeatpumpDualStage(Heatpump):
 
         self.nw.add_busses(self.busses['power'], self.busses['heat'])
 
-        self.busses['heat'].set_attr(P=self.param['Q_N'])
+        self.busses['heat'].set_attr(P=self.param['design']['Q_N'])
 
         self.solve_design()
         self.initialized = True
@@ -1149,28 +1250,28 @@ class HeatpumpDualStage(Heatpump):
                 )
             return
 
-        if not self.param['int_heatex1']:
+        if not self.param['design']['int_heatex1']:
             self.connections['evaporator1_to_comp1'].set_attr(p=None)
             self.connections['heatex1_2_to_cc1'].set_attr(
-                p=None, T=self.param['T_mid']
+                p=None, T=self.param['design']['T_mid']
                 )
         else:
             self.connections['evaporator1_to_int_heatex1_1'].set_attr(p=None)
             self.connections['heatex1_2_to_int_heatex1_1'].set_attr(
-                p=None, T=self.param['T_mid']
+                p=None, T=self.param['design']['T_mid']
                 )
             self.connections['int_heatex1_1_to_cc1'].set_attr(h=None)
             self.connections['int_heatex1_1_to_comp1'].set_attr(
                 T=Ref(
                     self.connections['evaporator1_to_int_heatex1_1'],
-                    1, self.param['deltaT_int_heatex1']
+                    1, self.param['design']['deltaT_int_heatex1']
                     )
                 )
 
         self.components['Evaporator 1'].set_attr(ttd_l=2)
         self.components['Heat Exchanger 1_2'].set_attr(ttd_u=2)
 
-        if not self.param['int_heatex2']:
+        if not self.param['design']['int_heatex2']:
             self.connections['heatex1_2_to_comp2'].set_attr(p=None)
             self.connections['cond2_to_cc2'].set_attr(p=None)
         else:
@@ -1180,7 +1281,7 @@ class HeatpumpDualStage(Heatpump):
             self.connections['int_heatex2_2_to_comp2'].set_attr(
                 T=Ref(
                     self.connections['heatex1_2_to_int_heatex2_2'],
-                    1, self.param['deltaT_int_heatex2']
+                    1, self.param['design']['deltaT_int_heatex2']
                     )
                 )
 
@@ -1201,7 +1302,7 @@ class HeatpumpDualStage(Heatpump):
         """Plot the heat pump cycle in logp-h-diagram of chosen refrigerant."""
         label_he = 'Heat Exchanger 1_2'
         if cycle == 1:
-            if not self.param['int_heatex1']:
+            if not self.param['design']['int_heatex1']:
                 results = {
                     self.components['Valve 1'].label:
                         self.components['Valve 1'].get_plotting_data()[1],
@@ -1230,7 +1331,7 @@ class HeatpumpDualStage(Heatpump):
                         self.components['Condenser 1'].get_plotting_data()[1]
                     }
         elif cycle == 2:
-            if not self.param['int_heatex2']:
+            if not self.param['design']['int_heatex2']:
                 results = {
                     self.components['Valve 2'].label:
                         self.components['Valve 2'].get_plotting_data()[1],
@@ -1259,7 +1360,7 @@ class HeatpumpDualStage(Heatpump):
                         self.components['Condenser 2'].get_plotting_data()[1]
                     }
 
-        diagram = FluidPropertyDiagram(fluid=self.param[f'refrigerant{cycle}'])
+        diagram = FluidPropertyDiagram(fluid=self.param['design'][f'refrigerant{cycle}'])
         diagram.set_unit_system(T='°C', h='kJ/kg', p='bar')
 
         for key, data in results.items():
@@ -1273,7 +1374,7 @@ class HeatpumpDualStage(Heatpump):
         ymin = 1e0
         ymax = 3e2
 
-        if self.param[f'refrigerant{cycle}'] == 'NH3':
+        if self.param['design'][f'refrigerant{cycle}'] == 'NH3':
             isoS = np.arange(0, 10000, 500)
 
             xmin = 250
@@ -1281,7 +1382,7 @@ class HeatpumpDualStage(Heatpump):
 
             infocoords = (0.9, 0.87)
 
-        elif self.param[f'refrigerant{cycle}'] == 'R1234ZE':
+        elif self.param['design'][f'refrigerant{cycle}'] == 'R1234ZE':
             isoS = np.arange(0, 2200, 50)
 
             xmin = 150
@@ -1289,7 +1390,7 @@ class HeatpumpDualStage(Heatpump):
 
             infocoords = (0.9, 0.87)
 
-        elif self.param[f'refrigerant{cycle}'] == 'R134A':
+        elif self.param['design'][f'refrigerant{cycle}'] == 'R134A':
             isoS = np.arange(0, 3000, 100)
 
             xmin = 100
@@ -1297,7 +1398,7 @@ class HeatpumpDualStage(Heatpump):
 
             infocoords = (0.895, 0.8775)
 
-        elif self.param[f'refrigerant{cycle}'] == 'R245FA':
+        elif self.param['design'][f'refrigerant{cycle}'] == 'R245FA':
             isoS = np.arange(0, 4000, 100)
 
             xmin = 100
@@ -1306,7 +1407,7 @@ class HeatpumpDualStage(Heatpump):
 
             infocoords = (0.865, 0.86)
 
-        elif self.param[f'refrigerant{cycle}'] == 'R718':
+        elif self.param['design'][f'refrigerant{cycle}'] == 'R718':
             isoS = np.arange(0, 14000, 1000)
             isoT = np.arange(50, 750, 50)
 
@@ -1363,31 +1464,31 @@ class HeatpumpDualStage(Heatpump):
             # display info box containing key parameters
             info = (
                 '$\\bf{{Wärmepumpe}}$\n'
-                + f'Setup {self.param["setup"]}\n'
+                + f'Setup {self.param["design"]["setup"]}\n'
                 + 'Betriebsdaten:\n'
-                + f'\t $\\dot{{Q}}_N = ${abs(self.param["Q_N"])*1e-6:.3} $MW$\n'
+                + f'\t $\\dot{{Q}}_N = ${abs(self.param["design"]["Q_N"])*1e-6:.3} $MW$\n'
                 + f'\t $COP = ${self.cop:.2f}\n'
                 + 'Kältemittel:\n'
-                + '\t $' + self.param[f'refrigerant{cycle}'] + '$\n'
+                + '\t $' + self.param['design'][f'refrigerant{cycle}'] + '$\n'
                 + 'Wärmequelle:\n'
-                + f'\t $T_{{VL}} = ${self.param["T_heatsource_ff"]} °C\n'
-                + f'\t $T_{{RL}} = ${self.param["T_heatsource_bf"]} °C\n'
+                + f'\t $T_{{VL}} = ${self.param["design"]["T_heatsource_ff"]} °C\n'
+                + f'\t $T_{{RL}} = ${self.param["design"]["T_heatsource_bf"]} °C\n'
                 + 'Mitteltemperatur:\n'
-                + f'\t $T_{{mid}} = $' + str(self.param['T_mid']) + '°C\n'
+                + f'\t $T_{{mid}} = $' + str(self.param['design']['T_mid']) + '°C\n'
                 )
 
-            if self.param[f'int_heatex{cycle}']:
+            if self.param['design'][f'int_heatex{cycle}']:
                 info += (
                     'Unterkühlung/Überhitzung:\n'
                     + '\t $\\Delta T_{{IHX}} = $'
-                    + self.param[f'deltaT_int_heatex{cycle}']
+                    + self.param['design'][f'deltaT_int_heatex{cycle}']
                     + ' °C\n'
                     )
 
             info += (
                 'Wärmesenke:\n'
-                + f'\t $T_{{VL}} = ${self.param["T_consumer_ff"]} °C\n'
-                + f'\t $T_{{RL}} = ${self.param["T_consumer_bf"]} °C'
+                + f'\t $T_{{VL}} = ${self.param["design"]["T_consumer_ff"]} °C\n'
+                + f'\t $T_{{RL}} = ${self.param["design"]["T_consumer_bf"]} °C'
                 )
 
             diagram.ax.annotate(
@@ -1406,22 +1507,22 @@ class HeatpumpDualStage(Heatpump):
             elif cycle == 2:
                 temp_level = 'hightemp'
 
-            if not self.param[f'int_heatex{cycle}']:
+            if not self.param['design'][f'int_heatex{cycle}']:
                 filename = (
-                    f'Diagramme\\Setup_{self.param["setup"]}\\'
+                    f'Diagramme\\Setup_{self.param["design"]["setup"]}\\'
                     + 'logph_'
-                    + self.param[f'refrigerant{cycle}']
-                    + f'_{self.param["T_heatsource_bf"]}'
-                    + f'_{self.param["T_consumer_ff"]}_{temp_level}.pdf'
+                    + self.param['design'][f'refrigerant{cycle}']
+                    + f'_{self.param["design"]["T_heatsource_bf"]}'
+                    + f'_{self.param["design"]["T_consumer_ff"]}_{temp_level}.pdf'
                     )
             else:
                 filename = (
-                    f'Diagramme\\Setup_{self.param["setup"]}\\'
+                    f'Diagramme\\Setup_{self.param["design"]["setup"]}\\'
                     + f'logph_'
-                    + self.param[f'refrigerant{cycle}']
-                    + f'_{self.param["T_heatsource_bf"]}'
-                    + f'_{self.param["T_consumer_ff"]}_dT'
-                    + self.param[f'deltaT_int_heatex{cycle}']
+                    + self.param['design'][f'refrigerant{cycle}']
+                    + f'_{self.param["design"]["T_heatsource_bf"]}'
+                    + f'_{self.param["design"]["T_consumer_ff"]}_dT'
+                    + self.param['design'][f'deltaT_int_heatex{cycle}']
                     + f'K_{temp_level}.pdf'
                     )
 

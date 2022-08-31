@@ -5,16 +5,16 @@ Generic heat pump model.
 @author: Jonas Freißmann and Malte Fritz
 """
 
+import os
+import json
+import numpy as np
+import CoolProp.CoolProp as CP
 from tespy.components import (
     CycleCloser, Source, Sink, Pump, HeatExchanger, Condenser,
     HeatExchangerSimple, Compressor, Valve
     )
-from tespy.connections import Connection
+from tespy.connections import Connection, Bus, Ref
 from tespy.networks import Network
-import os
-import numpy as np
-import CoolProp.CoolProp as CP
-from tespy.connections import Bus, Ref
 from tespy.tools.characteristics import CharLine
 from tespy.tools.characteristics import load_default_char as ldc
 from fluprodia import FluidPropertyDiagram
@@ -872,7 +872,7 @@ class HeatpumpSingleStage(Heatpump):
     def offdesign_simulation(self):
         """Calculate partload characteristic of single stage heat pump."""
 
-        self.m_design = self.connections('valve1_to_evaporator1').m.val
+        self.m_design = self.connections['valve1_to_evaporator1'].m.val
         self.T_hs_ff_range = np.linspace(
             self.param['offdesign']['T_hs_ff_start'],
             self.param['offdesign']['T_hs_ff_end'],
@@ -883,7 +883,7 @@ class HeatpumpSingleStage(Heatpump):
             self.param['offdesign']['T_cons_ff_end'],
             self.param['offdesign']['T_cons_ff_steps']
             )
-        self.pl_range = (
+        self.pl_range = np.linspace(
             self.param['offdesign']['partload_min'],
             self.param['offdesign']['partload_max'],
             self.param['offdesign']['partload_steps']
@@ -900,14 +900,14 @@ class HeatpumpSingleStage(Heatpump):
             Q_subarray = list()
             P_subarray = list()
             self.offdesign_results[T_hs_ff] = dict()
-            self.connections('heatsource_ff_to_heatsource_pump').set_attr(
+            self.connections['heatsource_ff_to_heatsource_pump'].set_attr(
                 T=T_hs_ff
                 )
-            self.connections('evaporator1_to_heatsource_bf').set_attr(
+            self.connections['evaporator1_to_heatsource_bf'].set_attr(
                 T=T_hs_ff-deltaT_hs
                 )
             for T_cons_ff in self.T_cons_ff_range:
-                self.connections('cond1_to_consumer').set_attr(T=T_cons_ff)
+                self.connections['cond1_to_consumer'].set_attr(T=T_cons_ff)
                 Q_subsubarray = list()
                 P_subsubarray = list()
                 self.offdesign_results[T_hs_ff][T_cons_ff] = dict()
@@ -926,9 +926,9 @@ class HeatpumpSingleStage(Heatpump):
                             self.init_path = 'hp_ss_int_heatex_init'
                         else:
                             self.init_path = 'hp_ss_init'
-                    self.connections('cond1_to_consumer').set_attr(T=T_cons_ff)
+                    self.connections['cond1_to_consumer'].set_attr(T=T_cons_ff)
                     self.busses['heat'].set_attr(P=None)
-                    self.connections('valve1_to_evaporator1').set_attr(
+                    self.connections['valve1_to_evaporator1'].set_attr(
                         m=pl * self.m_design
                         )
 
@@ -942,16 +942,14 @@ class HeatpumpSingleStage(Heatpump):
                         init_path=self.init_path
                         )
 
-                    if pl == self.pl_range[-1] and self.res[-1] < 1e-3:
+                    if pl == self.pl_range[-1] and self.nw.res[-1] < 1e-3:
                         if self.param['design']['int_heatex']:
                             self.nw.save('hp_ss_int_heatex_init')
                         else:
                             self.nw.save('hp_ss_init')
 
                     Q_subsubarray += [self.busses["heat"].P.val * 1e-6]
-                    P_subsubarray += [
-                        self.hp.busses["power"].P.val * 1e-6
-                        ]
+                    P_subsubarray += [self.busses["power"].P.val * 1e-6]
                     self.offdesign_results[T_hs_ff][T_cons_ff][pl] = {
                         'P': P_subsubarray[-1],
                         'Q': abs(Q_subsubarray[-1]),

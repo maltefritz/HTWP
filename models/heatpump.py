@@ -488,6 +488,95 @@ class Heatpump():
 
         self.connections = connections_copy
 
+    def offdesign_simulation(self):
+        """Calculate partload characteristic of heat pump."""
+        if not self.solved_design:
+            print(
+                'Heat pump has not been designed via the "design_simulation" '
+                + 'method. Therefore the offdesign simulation will fail.'
+                )
+            return
+
+        self.m_design = self.connections[self.conn_massflow].m.val
+        self.T_hs_ff_range = np.linspace(
+            self.param['offdesign']['T_hs_ff_start'],
+            self.param['offdesign']['T_hs_ff_end'],
+            self.param['offdesign']['T_hs_ff_steps']
+            )
+        self.T_cons_ff_range = np.linspace(
+            self.param['offdesign']['T_cons_ff_start'],
+            self.param['offdesign']['T_cons_ff_end'],
+            self.param['offdesign']['T_cons_ff_steps']
+            )
+        self.pl_range = np.linspace(
+            self.param['offdesign']['partload_min'],
+            self.param['offdesign']['partload_max'],
+            self.param['offdesign']['partload_steps']
+            )
+        deltaT_hs = (
+            self.param['design']['T_heatsource_ff']
+            - self.param['design']['T_heatsource_bf']
+            )
+
+        self.Q_array = list()
+        self.P_array = list()
+        self.offdesign_results = dict()
+        for T_hs_ff in self.T_hs_ff_range:
+            Q_subarray = list()
+            P_subarray = list()
+            self.offdesign_results[T_hs_ff] = dict()
+            self.connections['heatsource_ff_to_heatsource_pump'].set_attr(
+                T=T_hs_ff
+                )
+            self.connections['evaporator1_to_heatsource_bf'].set_attr(
+                T=T_hs_ff-deltaT_hs
+                )
+            for T_cons_ff in self.T_cons_ff_range:
+                self.connections[self.conn_T_cons_ff].set_attr(T=T_cons_ff)
+                Q_subsubarray = list()
+                P_subsubarray = list()
+                self.offdesign_results[T_hs_ff][T_cons_ff] = dict()
+                for pl in self.pl_range[::-1]:
+                    print(
+                        f'### Temp. HS = {T_hs_ff} °C, Temp. Cons = '
+                        + f'{T_cons_ff} °C, Partload = {pl*100} % ###'
+                        )
+                    self.init_path = None
+                    no_init_path = (
+                        (T_cons_ff != self.T_cons_ff_range[0])
+                        and (pl == self.pl_range[-1])
+                        )
+                    if no_init_path:
+                        self.init_path = 'hp_init'
+                    self.connections[self.conn_T_cons_ff].set_attr(T=T_cons_ff)
+                    self.busses['heat'].set_attr(P=None)
+                    self.connections[self.conn_massflow].set_attr(
+                        m=pl * self.m_design
+                        )
+
+                    self.nw.solve(
+                        'offdesign', design_path=self.design_path,
+                        init_path=self.init_path
+                        )
+
+                    if pl == self.pl_range[-1] and self.nw.res[-1] < 1e-3:
+                        self.nw.save('hp_init')
+
+                    Q_subsubarray += [self.busses["heat"].P.val * 1e-6]
+                    P_subsubarray += [self.busses["power"].P.val * 1e-6]
+                    self.offdesign_results[T_hs_ff][T_cons_ff][pl] = {
+                        'P': P_subsubarray[-1],
+                        'Q': abs(Q_subsubarray[-1]),
+                        'COP':  abs(Q_subsubarray[-1])/P_subsubarray[-1]
+                        }
+                Q_subarray += [Q_subsubarray[::-1]]
+                P_subarray += [P_subsubarray[::-1]]
+            self.Q_array += [Q_subarray]
+            self.P_array += [P_subarray]
+        if self.param['offdesign']['save_results']:
+            with open(self.offdesign_path, 'w') as file:
+                json.dump(self.offdesign_results, file, indent=4)
+
 
 class HeatpumpSingleStage(Heatpump):
     """
@@ -511,6 +600,8 @@ class HeatpumpSingleStage(Heatpump):
         self.parametrize_components()
         self.busses = dict()
         self.initialized = False
+        self.solved_design = False
+        self.offdesign_path = 'hp_ss_partload.json'
 
     def parametrize_components(self):
         """Parametrize components of single stage heat pump."""
@@ -657,6 +748,8 @@ class HeatpumpSingleStage(Heatpump):
                 )
             return
 
+        self.solved_design = False
+
         if not self.param['design']['int_heatex']:
             self.connections['evaporator1_to_comp1'].set_attr(p=None)
             self.components['Evaporator 1'].set_attr(ttd_l=2)
@@ -680,7 +773,13 @@ class HeatpumpSingleStage(Heatpump):
                     )
                 )
 
+        self.conn_massflow = 'valve1_to_evaporator1'
+        self.conn_T_cons_ff = 'cond1_to_consumer'
+
         self.solve_design()
+        self.design_path = 'hp_ss_design'
+        self.nw.save(self.design_path)
+        self.solved_design = True
 
     def solve_design(self):
         """Perform simulation with 'design' mode."""
@@ -869,105 +968,6 @@ class HeatpumpSingleStage(Heatpump):
         if return_diagram:
             return diagram
 
-    def offdesign_simulation(self):
-        """Calculate partload characteristic of single stage heat pump."""
-
-        self.m_design = self.connections['valve1_to_evaporator1'].m.val
-        self.T_hs_ff_range = np.linspace(
-            self.param['offdesign']['T_hs_ff_start'],
-            self.param['offdesign']['T_hs_ff_end'],
-            self.param['offdesign']['T_hs_ff_steps']
-            )
-        self.T_cons_ff_range = np.linspace(
-            self.param['offdesign']['T_cons_ff_start'],
-            self.param['offdesign']['T_cons_ff_end'],
-            self.param['offdesign']['T_cons_ff_steps']
-            )
-        self.pl_range = np.linspace(
-            self.param['offdesign']['partload_min'],
-            self.param['offdesign']['partload_max'],
-            self.param['offdesign']['partload_steps']
-            )
-        deltaT_hs = (
-            self.param['design']['T_heatsource_ff']
-            - self.param['design']['T_heatsource_bf']
-            )
-
-        self.Q_array = list()
-        self.P_array = list()
-        self.offdesign_results = dict()
-        for T_hs_ff in self.T_hs_ff_range:
-            Q_subarray = list()
-            P_subarray = list()
-            self.offdesign_results[T_hs_ff] = dict()
-            self.connections['heatsource_ff_to_heatsource_pump'].set_attr(
-                T=T_hs_ff
-                )
-            self.connections['evaporator1_to_heatsource_bf'].set_attr(
-                T=T_hs_ff-deltaT_hs
-                )
-            for T_cons_ff in self.T_cons_ff_range:
-                self.connections['cond1_to_consumer'].set_attr(T=T_cons_ff)
-                Q_subsubarray = list()
-                P_subsubarray = list()
-                self.offdesign_results[T_hs_ff][T_cons_ff] = dict()
-                for pl in self.pl_range[::-1]:
-                    print(
-                        f'### Temp. HS = {T_hs_ff} °C, Temp. Cons = '
-                        + f'{T_cons_ff} °C, Partload = {pl*100} % ###'
-                        )
-                    self.init_path = None
-                    no_init_path = (
-                        (T_cons_ff != self.T_cons_ff_range[0])
-                        and (pl == self.pl_range[-1])
-                        )
-                    if no_init_path:
-                        if self.param['design']['int_heatex']:
-                            self.init_path = 'hp_ss_int_heatex_init'
-                        else:
-                            self.init_path = 'hp_ss_init'
-                    self.connections['cond1_to_consumer'].set_attr(T=T_cons_ff)
-                    self.busses['heat'].set_attr(P=None)
-                    self.connections['valve1_to_evaporator1'].set_attr(
-                        m=pl * self.m_design
-                        )
-
-                    if self.param['design']['int_heatex']:
-                        self.design_path = 'hp_ss_int_heatex_stable'
-                    else:
-                        self.design_path = 'hp_ss_stable'
-                    # def solve_offdesign?
-                    self.nw.solve(
-                        'offdesign', design_path=self.design_path,
-                        init_path=self.init_path
-                        )
-
-                    if pl == self.pl_range[-1] and self.nw.res[-1] < 1e-3:
-                        if self.param['design']['int_heatex']:
-                            self.nw.save('hp_ss_int_heatex_init')
-                        else:
-                            self.nw.save('hp_ss_init')
-
-                    Q_subsubarray += [self.busses["heat"].P.val * 1e-6]
-                    P_subsubarray += [self.busses["power"].P.val * 1e-6]
-                    self.offdesign_results[T_hs_ff][T_cons_ff][pl] = {
-                        'P': P_subsubarray[-1],
-                        'Q': abs(Q_subsubarray[-1]),
-                        'COP':  abs(Q_subsubarray[-1])/P_subsubarray[-1]
-                        }
-                Q_subarray += [Q_subsubarray[::-1]]
-                P_subarray += [P_subsubarray[::-1]]
-            self.Q_array += [Q_subarray]
-            self.P_array += [P_subarray]
-        if self.param['offdesign']['save_results']:
-            if self.param['design']['int_heatex']:
-                path = 'hp_ss_int_heatex_partload.json'
-            else:
-                path = 'hp_ss_partload.json'
-
-            with open(path, 'w') as file:
-                json.dump(self.offdesign_results, file, indent=4)
-
 
 class HeatpumpDualStage(Heatpump):
     """
@@ -1004,6 +1004,8 @@ class HeatpumpDualStage(Heatpump):
         self.parametrize_components()
         self.busses = dict()
         self.initialized = False
+        self.solved_design = False
+        self.offdesign_path = 'hp_ds_partload.json'
 
     def parametrize_components(self):
         """Parametrize components of dual stage heat pump."""
@@ -1272,6 +1274,8 @@ class HeatpumpDualStage(Heatpump):
                 )
             return
 
+        self.solved_design = False
+
         if not self.param['design']['int_heatex1']:
             self.connections['evaporator1_to_comp1'].set_attr(p=None)
             self.connections['heatex1_2_to_cc1'].set_attr(
@@ -1309,7 +1313,13 @@ class HeatpumpDualStage(Heatpump):
 
         self.components['Condenser 2'].set_attr(ttd_u=2)
 
+        self.conn_massflow = 'cc2_to_valve2'
+        self.conn_T_cons_ff = 'cond2_to_consumer'
+
         self.solve_design()
+        self.design_path = 'hp_ds_design'
+        self.nw.save(self.design_path)
+        self.solved_design = True
 
     def solve_design(self):
         """Perform simulation with 'design' mode."""
@@ -1580,7 +1590,6 @@ if __name__ == '__main__':
     # hp.design_simulation()
     # hp.generate_logph()
 
-    import json
     with open('parameter_dual.json', 'r') as file:
         param = json.load(file)
 

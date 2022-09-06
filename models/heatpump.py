@@ -8,7 +8,9 @@ Generic heat pump model.
 import os
 import json
 import numpy as np
+import pandas as pd
 import CoolProp.CoolProp as CP
+from scipy.interpolate import interpn
 from tespy.components import (
     CycleCloser, Source, Sink, Pump, HeatExchanger, Condenser,
     HeatExchangerSimple, Compressor, Valve
@@ -501,17 +503,20 @@ class Heatpump():
         self.T_hs_ff_range = np.linspace(
             self.param['offdesign']['T_hs_ff_start'],
             self.param['offdesign']['T_hs_ff_end'],
-            self.param['offdesign']['T_hs_ff_steps']
+            self.param['offdesign']['T_hs_ff_steps'],
+            endpoint=True
             )
         self.T_cons_ff_range = np.linspace(
             self.param['offdesign']['T_cons_ff_start'],
             self.param['offdesign']['T_cons_ff_end'],
-            self.param['offdesign']['T_cons_ff_steps']
+            self.param['offdesign']['T_cons_ff_steps'],
+            endpoint=True
             )
         self.pl_range = np.linspace(
             self.param['offdesign']['partload_min'],
             self.param['offdesign']['partload_max'],
-            self.param['offdesign']['partload_steps']
+            self.param['offdesign']['partload_steps'],
+            endpoint=True
             )
         deltaT_hs = (
             self.param['design']['T_heatsource_ff']
@@ -576,6 +581,113 @@ class Heatpump():
         if self.param['offdesign']['save_results']:
             with open(self.offdesign_path, 'w') as file:
                 json.dump(self.offdesign_results, file, indent=4)
+
+    def calc_partload_char(self, **kwargs):
+        """
+        Interpolate data points of heat output and power input.
+
+        Return functions to interpolate values heat output and
+        power input based on the partload and the feed flow
+        temperatures of the heat source and sink. If there is
+        no data given through keyword arguments, the instances
+        attributes will be searched for the necessary data.
+
+        Parameters
+        ----------
+        kwargs : dict
+            Necessary data is:
+                Q_array : 3d array
+                P_array : 3d array
+                pl_rage : 1d array
+                T_hs_ff_range : 1d array
+                T_cons_ff_range : 1d array
+        """
+        necessary_params = [
+            'Q_array', 'P_array', 'pl_range', 'T_hs_ff_range',
+            'T_cons_ff_range'
+            ]
+        if len(kwargs):
+            for nec_param in necessary_params:
+                if nec_param not in kwargs:
+                    print(
+                        f'Necessary parameter {nec_param} not '
+                        + 'in kwargs. The necessary parameters'
+                        + f' are: {necessary_params}'
+                        )
+                    return
+            Q_array = np.asarray(kwargs['Q_array'])
+            P_array = np.asarray(kwargs['P_array'])
+            pl_range = kwargs['pl_range']
+            T_hs_ff_range = kwargs['T_hs_ff_range']
+            T_cons_ff_range = kwargs['T_cons_ff_range']
+        else:
+            for nec_param in necessary_params:
+                if nec_param not in self.__dict__:
+                    print(
+                        f'Necessary parameter {nec_param} can '
+                        + 'not be found in the instances '
+                        + 'attributes. Please make sure to '
+                        + 'perform the offdesign_simulation '
+                        + 'method or provide the necessary '
+                        + 'parameters as kwargs. These are: '
+                        + f'{necessary_params}'
+                        )
+                    return
+            Q_array = np.asarray(self.Q_array)
+            P_array = np.asarray(self.P_array)
+            pl_range = self.pl_range
+            T_hs_ff_range = self.T_hs_ff_range
+            T_cons_ff_range = self.T_cons_ff_range
+
+        pl_step = 0.1
+        T_hs_ff_step = 1
+        T_cons_ff_step = 1
+
+        pl_fullrange = np.arange(
+            pl_range[0],
+            pl_range[-1]+pl_step,
+            pl_step
+            )
+        T_hs_ff_fullrange = np.arange(
+            T_hs_ff_range[0], T_hs_ff_range[-1]+T_hs_ff_step, T_hs_ff_step
+            )
+        T_cons_ff_fullrange = np.arange(
+            T_cons_ff_range[0], T_cons_ff_range[-1]+T_cons_ff_step,
+            T_cons_ff_step
+            )
+
+        multiindex = pd.MultiIndex.from_product(
+                        [T_hs_ff_fullrange, T_cons_ff_fullrange, pl_fullrange],
+                        names=['T_hs_ff', 'T_cons_ff', 'pl']
+                        )
+
+        partload_char = pd.DataFrame(
+            index=multiindex, columns=['Q', 'P', 'COP']
+            )
+
+        for T_hs_ff in T_hs_ff_fullrange:
+            for T_cons_ff in T_cons_ff_fullrange:
+                for pl in pl_fullrange:
+                    partload_char.loc[(T_hs_ff, T_cons_ff, pl), 'Q'] = abs(
+                        interpn(
+                            (T_hs_ff_range, T_cons_ff_range, pl_range),
+                            Q_array,
+                            (T_hs_ff, T_cons_ff, round(pl, 1)),
+                            bounds_error=False
+                            )[0]
+                        )
+                    partload_char.loc[(T_hs_ff, T_cons_ff, pl), 'P'] = interpn(
+                        (T_hs_ff_range, T_cons_ff_range, pl_range),
+                        P_array,
+                        (T_hs_ff, T_cons_ff, round(pl, 1)),
+                        bounds_error=False
+                        )[0]
+                    partload_char.loc[(T_hs_ff, T_cons_ff, pl), 'COP'] = (
+                        partload_char.loc[(T_hs_ff, T_cons_ff, pl), 'Q']
+                        / partload_char.loc[(T_hs_ff, T_cons_ff, pl), 'P']
+                        )
+
+        return partload_char
 
 
 class HeatpumpSingleStage(Heatpump):

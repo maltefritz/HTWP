@@ -672,14 +672,15 @@ class Heatpump():
                         interpn(
                             (T_hs_ff_range, T_cons_ff_range, pl_range),
                             Q_array,
-                            (T_hs_ff, T_cons_ff, round(pl, 1)),
+                            (round(T_hs_ff, 3), round(T_cons_ff, 3),
+                             round(pl, 3)),
                             bounds_error=False
                             )[0]
                         )
                     partload_char.loc[(T_hs_ff, T_cons_ff, pl), 'P'] = interpn(
                         (T_hs_ff_range, T_cons_ff_range, pl_range),
                         P_array,
-                        (T_hs_ff, T_cons_ff, round(pl, 1)),
+                        (round(T_hs_ff, 3), round(T_cons_ff, 3), round(pl, 3)),
                         bounds_error=False
                         )[0]
                     partload_char.loc[(T_hs_ff, T_cons_ff, pl), 'COP'] = (

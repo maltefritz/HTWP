@@ -765,10 +765,10 @@ class Heatpump():
                 ax.set_ylabel('Wärmestrom $\\dot{{Q}}$ in $MW$')
                 ax.set_title(f'Quellentemperatur: {T_hs_ff:.0f} °C')
 
-                if output_path:
-                    shplt.create_multipage_pdf(output_path)
-                else:
-                    plt.show()
+            if output_path:
+                shplt.create_multipage_pdf(output_path)
+            else:
+                plt.show()
 
         if cmap_type == 'COP':
             for T_hs_ff in set(partload_char.index.get_level_values('T_hs_ff')):
@@ -799,10 +799,10 @@ class Heatpump():
                 ax.set_ylabel('Wärmestrom $\\dot{{Q}}$ in $MW$')
                 ax.set_title(f'Quellentemperatur: {T_hs_ff:.0f} °C')
 
-                if output_path:
-                    shplt.create_multipage_pdf(output_path)
-                else:
-                    plt.show()
+            if output_path:
+                shplt.create_multipage_pdf(output_path)
+            else:
+                plt.show()
 
 
 class HeatpumpSingleStage(Heatpump):

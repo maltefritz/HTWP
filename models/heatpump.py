@@ -737,32 +737,7 @@ class Heatpump():
                         ))
                 )
             for T_hs_ff in set(partload_char.index.get_level_values('T_hs_ff')):
-                fig, ax = plt.subplots(figsize=(8, 6))
-
-                # for i, T_cons_ff in enumerate(set(partload_char.index.get_level_values('T_cons_ff'))):
-                #     bool_label = (
-                #         T_cons_ff == np.min(
-                #             partload_char.index.get_level_values('T_cons_ff')
-                #             )
-                #         or T_cons_ff == np.max(
-                #             partload_char.index.get_level_values('T_cons_ff')
-                #             )
-                #         or T_cons_ff == np.median(
-                #             partload_char.index.get_level_values('T_cons_ff')
-                #             )
-                #         )
-                #     if bool_label:
-                #         ax.plot(
-                #             partload_char.loc[(T_hs_ff, T_cons_ff), 'P'],
-                #             partload_char.loc[(T_hs_ff, T_cons_ff), 'Q'],
-                #             color=colors[i], label=f'{T_cons_ff:.0f} °C'
-                #             )
-                #     else:
-                #         ax.plot(
-                #             partload_char.loc[(T_hs_ff, T_cons_ff), 'P'],
-                #             partload_char.loc[(T_hs_ff, T_cons_ff), 'Q'],
-                #             color=colors[i]
-                #             )
+                fig, ax = plt.subplots(figsize=(9.5, 6))
 
                 for i, T_cons_ff in enumerate(set(partload_char.index.get_level_values('T_cons_ff'))):
                     ax.plot(
@@ -784,10 +759,6 @@ class Heatpump():
                     )
                 cbar = plt.colorbar(sm, ax=ax)
                 cbar.set_label('Senkentemperatur in $°C$')
-                # ax.legend(
-                #     title='Senkentemperatur:', fontsize='small',
-                #     loc='upper left', bbox_to_anchor=(1.02, 1)
-                #     )
                 ax.set_xlim(0, partload_char['P'].max() * 1.05)
                 ax.set_ylim(0, partload_char['Q'].max() * 1.05)
                 ax.set_xlabel('Elektrische Leistung $P$ in $MW$')
@@ -801,7 +772,7 @@ class Heatpump():
 
         if cmap_type == 'COP':
             for T_hs_ff in set(partload_char.index.get_level_values('T_hs_ff')):
-                fig, ax = plt.subplots(figsize=(10, 6))
+                fig, ax = plt.subplots(figsize=(9.5, 6))
 
                 scatterplot = ax.scatter(
                     partload_char.loc[(T_hs_ff), 'P'],

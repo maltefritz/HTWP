@@ -9,6 +9,8 @@ import os
 import json
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import SWSHplotting as shplt
 import CoolProp.CoolProp as CP
 from scipy.interpolate import interpn
 from tespy.components import (
@@ -639,7 +641,7 @@ class Heatpump():
             T_hs_ff_range = self.T_hs_ff_range
             T_cons_ff_range = self.T_cons_ff_range
 
-        pl_step = 0.1
+        pl_step = 0.01
         T_hs_ff_step = 1
         T_cons_ff_step = 1
 
@@ -689,6 +691,147 @@ class Heatpump():
                         )
 
         return partload_char
+
+    def plot_partload_char(self, partload_char, cmap_type='', output_path=''):
+        """
+        Plot the partload characteristic of the heat pump.
+
+        Parameters
+        ----------
+        partload_char : pd.DataFrame
+            DataFrame of the full partload characteristic containing 'Q', 'P'
+            and 'COP' with a MultiIndex of the three variables 'T_hs_ff',
+            'T_cons_ff' and 'pl'.
+
+        cmap_type : str
+            String of the possible colormap variations, which are 'T_cons_ff'
+            and 'COP'.
+
+        output_path : str
+            String path to save the generated plots to. If omitted no plots
+            will be saved.
+        """
+        if not cmap_type:
+            print(
+                'Please provide a cmap_type of eiher "T_cons_ff" or '
+                + '"COP" to plot the heat pump partload characteristic.'
+                )
+            return
+
+        shplt.init_params()
+
+        cmap_colors = [
+            shplt.znes_colors()['darkblue'], shplt.znes_colors()['lightblue'],
+            shplt.znes_colors()['lightgrey'], shplt.znes_colors()['orange'],
+            shplt.znes_colors()['red']
+            ]
+
+        cmap = shplt.get_perceptually_uniform_colormap(cmap_colors)
+
+        if cmap_type == 'T_cons_ff':
+            colors = cmap(
+                np.linspace(
+                    0, 1,
+                    len(set(
+                        partload_char.index.get_level_values('T_cons_ff'))
+                        ))
+                )
+            for T_hs_ff in set(partload_char.index.get_level_values('T_hs_ff')):
+                fig, ax = plt.subplots(figsize=(8, 6))
+
+                # for i, T_cons_ff in enumerate(set(partload_char.index.get_level_values('T_cons_ff'))):
+                #     bool_label = (
+                #         T_cons_ff == np.min(
+                #             partload_char.index.get_level_values('T_cons_ff')
+                #             )
+                #         or T_cons_ff == np.max(
+                #             partload_char.index.get_level_values('T_cons_ff')
+                #             )
+                #         or T_cons_ff == np.median(
+                #             partload_char.index.get_level_values('T_cons_ff')
+                #             )
+                #         )
+                #     if bool_label:
+                #         ax.plot(
+                #             partload_char.loc[(T_hs_ff, T_cons_ff), 'P'],
+                #             partload_char.loc[(T_hs_ff, T_cons_ff), 'Q'],
+                #             color=colors[i], label=f'{T_cons_ff:.0f} °C'
+                #             )
+                #     else:
+                #         ax.plot(
+                #             partload_char.loc[(T_hs_ff, T_cons_ff), 'P'],
+                #             partload_char.loc[(T_hs_ff, T_cons_ff), 'Q'],
+                #             color=colors[i]
+                #             )
+
+                for i, T_cons_ff in enumerate(set(partload_char.index.get_level_values('T_cons_ff'))):
+                    ax.plot(
+                        partload_char.loc[(T_hs_ff, T_cons_ff), 'P'],
+                        partload_char.loc[(T_hs_ff, T_cons_ff), 'Q'],
+                        color=colors[i]
+                        )
+
+                ax.grid()
+                sm = plt.cm.ScalarMappable(
+                    cmap=cmap, norm=plt.Normalize(
+                        vmin=np.min(
+                            partload_char.index.get_level_values('T_cons_ff')
+                            ),
+                        vmax=np.max(
+                            partload_char.index.get_level_values('T_cons_ff')
+                            )
+                        )
+                    )
+                cbar = plt.colorbar(sm, ax=ax)
+                cbar.set_label('Senkentemperatur in $°C$')
+                # ax.legend(
+                #     title='Senkentemperatur:', fontsize='small',
+                #     loc='upper left', bbox_to_anchor=(1.02, 1)
+                #     )
+                ax.set_xlim(0, partload_char['P'].max() * 1.05)
+                ax.set_ylim(0, partload_char['Q'].max() * 1.05)
+                ax.set_xlabel('Elektrische Leistung $P$ in $MW$')
+                ax.set_ylabel('Wärmestrom $\\dot{{Q}}$ in $MW$')
+                ax.set_title(f'Quellentemperatur: {T_hs_ff:.0f} °C')
+
+                if output_path:
+                    shplt.create_multipage_pdf(output_path)
+                else:
+                    plt.show()
+
+        if cmap_type == 'COP':
+            for T_hs_ff in set(partload_char.index.get_level_values('T_hs_ff')):
+                fig, ax = plt.subplots(figsize=(10, 6))
+
+                scatterplot = ax.scatter(
+                    partload_char.loc[(T_hs_ff), 'P'],
+                    partload_char.loc[(T_hs_ff), 'Q'],
+                    c=partload_char.loc[(T_hs_ff), 'COP'],
+                    cmap=cmap,
+                    vmin=(
+                        partload_char['COP'].min()
+                        - partload_char['COP'].max() * 0.05
+                        ),
+                    vmax=(
+                        partload_char['COP'].max()
+                        + partload_char['COP'].max() * 0.05
+                        )
+                    )
+
+                cbar = plt.colorbar(scatterplot, ax=ax)
+                cbar.set_label('Leistungszahl $COP$')
+
+                ax.grid()
+                ax.set_xlim(0, partload_char['P'].max() * 1.05)
+                ax.set_ylim(0, partload_char['Q'].max() * 1.05)
+                ax.set_xlabel('Elektrische Leistung $P$ in $MW$')
+                ax.set_ylabel('Wärmestrom $\\dot{{Q}}$ in $MW$')
+                ax.set_title(f'Quellentemperatur: {T_hs_ff:.0f} °C')
+
+                if output_path:
+                    shplt.create_multipage_pdf(output_path)
+                else:
+                    plt.show()
 
 
 class HeatpumpSingleStage(Heatpump):

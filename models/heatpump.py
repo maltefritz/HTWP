@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import SWSHplotting as shplt
 import CoolProp.CoolProp as CP
 from scipy.interpolate import interpn
+from sklearn.linear_model import LinearRegression
 from tespy.components import (
     CycleCloser, Source, Sink, Pump, HeatExchanger, Condenser,
     HeatExchangerSimple, Compressor, Valve
@@ -812,6 +813,94 @@ class Heatpump():
                 shplt.create_multipage_pdf(output_path)
             else:
                 plt.show()
+
+    def linearize_partload_char(self, partload_char, line_type='offset',
+                                regression_type='OLS'):
+        """
+        Linearize partload characteristic for usage in MILP problems.
+
+        Parameters
+        ----------
+        partload_char : pd.DataFrame
+            DataFrame of the full partload characteristic containing 'Q', 'P'
+            and 'COP' with a MultiIndex of the three variables 'T_hs_ff',
+            'T_cons_ff' and 'pl'.
+
+        line_type : str
+            Type of linear model to generate. Options are 'origin' for a line
+            through the origin or 'offset' for mixed integer offset model.
+            Defaults to 'offset' if it is not set.
+
+        regression_type : str
+            Type of regression method to use for linearization of the partload
+            characteristic. Options are 'OLS' for the method of ordinary least
+            squares or 'MinMax' for a line from the minimum to the maximum
+            value.
+            Defaults to 'OLS' if it is not set.
+        """
+        cols = ['P_max', 'P_min']
+        if line_type == 'origin':
+            cols += ['COP']
+        elif line_type == 'offset':
+            cols += ['c_1', 'c_0']
+
+        T_hs_ff_range = set(
+            partload_char.index.get_level_values('T_hs_ff')
+            )
+        T_cons_ff_range = set(
+            partload_char.index.get_level_values('T_cons_ff')
+            )
+
+        multiindex = pd.MultiIndex.from_product(
+            [T_hs_ff_range, T_cons_ff_range],
+            names=['T_hs_ff', 'T_cons_ff']
+            )
+        linear_model = pd.DataFrame(index=multiindex, columns=cols)
+
+        for T_hs_ff in T_hs_ff_range:
+            for T_cons_ff in T_cons_ff_range:
+                idx = (T_hs_ff, T_cons_ff)
+                linear_model.loc[idx, 'P_max'] = (
+                    partload_char.loc[idx, 'P'].max()
+                    )
+                linear_model.loc[idx, 'P_min'] = (
+                    partload_char.loc[idx, 'P'].min()
+                    )
+                if regression_type == 'MinMax':
+                    if line_type == 'origin':
+                        linear_model.loc[idx, 'COP'] = (
+                            (partload_char.loc[idx, 'Q'].max()
+                             - partload_char.loc[idx, 'Q'].min())
+                            / (partload_char.loc[idx, 'P'].max()
+                               - partload_char.loc[idx, 'P'].min())
+                            )
+                    elif line_type == 'offset':
+                        linear_model.loc[idx, 'c_1'] = (
+                            (partload_char.loc[idx, 'Q'].max()
+                             - partload_char.loc[idx, 'Q'].min())
+                            / (partload_char.loc[idx, 'P'].max()
+                               - partload_char.loc[idx, 'P'].min())
+                            )
+                        linear_model.loc[idx, 'c_0'] = (
+                            partload_char.loc[idx, 'Q'].max()
+                            - partload_char.loc[idx, 'P'].max()
+                            * linear_model.loc[idx, 'c_1']
+                            )
+                elif regression_type == 'OLS':
+                    regressor = partload_char.loc[idx, 'P'].to_numpy()
+                    regressor = regressor.reshape(-1, 1)
+                    response = partload_char.loc[idx, 'Q'].to_numpy()
+                    if line_type == 'origin':
+                        LinReg = LinearRegression(fit_intercept=False).fit(
+                            regressor, response
+                            )
+                        linear_model.loc[idx, 'COP'] = LinReg.coef_[0]
+                    elif line_type == 'offset':
+                        LinReg = LinearRegression().fit(regressor, response)
+                        linear_model.loc[idx, 'c_1'] = LinReg.coef_[0]
+                        linear_model.loc[idx, 'c_0'] = LinReg.intercept_
+
+        return linear_model
 
 
 class HeatpumpSingleStage(Heatpump):

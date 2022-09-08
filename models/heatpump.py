@@ -736,10 +736,16 @@ class Heatpump():
                         partload_char.index.get_level_values('T_cons_ff'))
                         ))
                 )
-            for T_hs_ff in set(partload_char.index.get_level_values('T_hs_ff')):
+            T_hs_ff_range = set(
+                partload_char.index.get_level_values('T_hs_ff')
+                )
+            for T_hs_ff in T_hs_ff_range:
                 fig, ax = plt.subplots(figsize=(9.5, 6))
 
-                for i, T_cons_ff in enumerate(set(partload_char.index.get_level_values('T_cons_ff'))):
+                T_cons_ff_range = set(
+                    partload_char.index.get_level_values('T_cons_ff')
+                    )
+                for i, T_cons_ff in enumerate(T_cons_ff_range):
                     ax.plot(
                         partload_char.loc[(T_hs_ff, T_cons_ff), 'P'],
                         partload_char.loc[(T_hs_ff, T_cons_ff), 'Q'],
@@ -771,7 +777,10 @@ class Heatpump():
                 plt.show()
 
         if cmap_type == 'COP':
-            for T_hs_ff in set(partload_char.index.get_level_values('T_hs_ff')):
+            T_hs_ff_range = set(
+                partload_char.index.get_level_values('T_hs_ff')
+                )
+            for T_hs_ff in T_hs_ff_range:
                 fig, ax = plt.subplots(figsize=(9.5, 6))
 
                 scatterplot = ax.scatter(

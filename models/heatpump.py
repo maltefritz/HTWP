@@ -869,10 +869,8 @@ class Heatpump():
                 if regression_type == 'MinMax':
                     if line_type == 'origin':
                         linear_model.loc[idx, 'COP'] = (
-                            (partload_char.loc[idx, 'Q'].max()
-                             - partload_char.loc[idx, 'Q'].min())
-                            / (partload_char.loc[idx, 'P'].max()
-                               - partload_char.loc[idx, 'P'].min())
+                            partload_char.loc[idx, 'Q'].max()
+                            / partload_char.loc[idx, 'P'].max()
                             )
                     elif line_type == 'offset':
                         linear_model.loc[idx, 'c_1'] = (
@@ -901,6 +899,30 @@ class Heatpump():
                         linear_model.loc[idx, 'c_0'] = LinReg.intercept_
 
         return linear_model
+
+    def arrange_char_timeseries(self, linear_model, temp_ts):
+        """
+        Arrange a timeseries of the characteristics based on temperature data.
+
+        Parameters
+        ----------
+        linear_model : pd.DataFrame
+            DataFrame of the linearized partload characteristic with a
+            MultiIndex of the three variables 'T_hs_ff' and 'T_cons_ff'.
+
+        temp_ts : pd.DataFrame
+            Timeseries of 'T_hs_ff' and 'T_cons_ff' as they occur in the period
+            observed.
+        """
+        char_ts = pd.DataFrame(
+            index=temp_ts.index, columns=linear_model.columns
+            )
+        for i in temp_ts.index:
+            char_ts.loc[i, :] = linear_model.loc[
+                (temp_ts.loc[i, 'T_hs_ff'], temp_ts.loc[i, 'T_cons_ff']), :
+                ]
+
+        return char_ts
 
 
 class HeatpumpSingleStage(Heatpump):

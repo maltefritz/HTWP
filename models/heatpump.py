@@ -502,7 +502,6 @@ class Heatpump():
                 )
             return
 
-        self.m_design = self.connections[self.conn_massflow].m.val
         self.T_hs_ff_range = np.linspace(
             self.param['offdesign']['T_hs_ff_start'],
             self.param['offdesign']['T_hs_ff_end'],
@@ -693,7 +692,8 @@ class Heatpump():
 
         return partload_char
 
-    def plot_partload_char(self, partload_char, cmap_type='', output_path=''):
+    def plot_partload_char(self, partload_char, cmap_type='', output_path='',
+                           return_fig_ax=False):
         """
         Plot the partload characteristic of the heat pump.
 
@@ -740,6 +740,8 @@ class Heatpump():
             T_hs_ff_range = set(
                 partload_char.index.get_level_values('T_hs_ff')
                 )
+            figs = dict()
+            axes = dict()
             for T_hs_ff in T_hs_ff_range:
                 fig, ax = plt.subplots(figsize=(9.5, 6))
 
@@ -771,9 +773,13 @@ class Heatpump():
                 ax.set_xlabel('Elektrische Leistung $P$ in $MW$')
                 ax.set_ylabel('Wärmestrom $\\dot{{Q}}$ in $MW$')
                 ax.set_title(f'Quellentemperatur: {T_hs_ff:.0f} °C')
+                figs[T_hs_ff] = fig
+                axes[T_hs_ff] = ax
 
             if output_path:
                 shplt.create_multipage_pdf(output_path)
+            elif return_fig_ax:
+                return figs, axes
             else:
                 plt.show()
 
@@ -781,6 +787,8 @@ class Heatpump():
             T_hs_ff_range = set(
                 partload_char.index.get_level_values('T_hs_ff')
                 )
+            figs = dict()
+            axes = dict()
             for T_hs_ff in T_hs_ff_range:
                 fig, ax = plt.subplots(figsize=(9.5, 6))
 
@@ -808,9 +816,13 @@ class Heatpump():
                 ax.set_xlabel('Elektrische Leistung $P$ in $MW$')
                 ax.set_ylabel('Wärmestrom $\\dot{{Q}}$ in $MW$')
                 ax.set_title(f'Quellentemperatur: {T_hs_ff:.0f} °C')
+                figs[T_hs_ff] = fig
+                axes[T_hs_ff] = ax
 
             if output_path:
                 shplt.create_multipage_pdf(output_path)
+            elif return_fig_ax:
+                return figs, axes
             else:
                 plt.show()
 
@@ -1120,6 +1132,7 @@ class HeatpumpSingleStage(Heatpump):
                     )
                 )
 
+        self.m_design = self.connections['valve1_to_evaporator1'].m.val
         self.conn_massflow = 'valve1_to_evaporator1'
         self.conn_T_cons_ff = 'cond1_to_consumer'
 
@@ -1660,6 +1673,7 @@ class HeatpumpDualStage(Heatpump):
 
         self.components['Condenser 2'].set_attr(ttd_u=2)
 
+        self.m_design = self.connections['cc2_to_valve2'].m.val
         self.conn_massflow = 'cc2_to_valve2'
         self.conn_T_cons_ff = 'cond2_to_consumer'
 

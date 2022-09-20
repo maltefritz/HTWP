@@ -493,7 +493,7 @@ class Heatpump():
 
         self.connections = connections_copy
 
-    def offdesign_simulation(self):
+    def offdesign_simulation(self, debug_log=False):
         """Calculate partload characteristic of heat pump."""
         if not self.solved_design:
             print(
@@ -528,6 +528,8 @@ class Heatpump():
         self.Q_array = list()
         self.P_array = list()
         self.offdesign_results = dict()
+        if debug_log:
+            log_text = str()
         for T_hs_ff in self.T_hs_ff_range:
             Q_subarray = list()
             P_subarray = list()
@@ -569,6 +571,15 @@ class Heatpump():
                     if pl == self.pl_range[-1] and self.nw.res[-1] < 1e-3:
                         self.nw.save('hp_init')
 
+                    if debug_log:
+                        if self.nw.res[-1] >= 1e-3:
+                            log_text += (
+                                f'T_hs_ff: {T_hs_ff:.2f} °C, T_cons_ff: '
+                                + f'{T_cons_ff:.2f} °C, partload: '
+                                + f'{pl*100:.2f} %\n'
+                                + f'\tResidual: {self.nw.res[-1]:.2e}\n\n'
+                                )
+
                     Q_subsubarray += [self.busses["heat"].P.val * 1e-6]
                     P_subsubarray += [self.busses["power"].P.val * 1e-6]
                     self.offdesign_results[T_hs_ff][T_cons_ff][pl] = {
@@ -583,6 +594,12 @@ class Heatpump():
         if self.param['offdesign']['save_results']:
             with open(self.offdesign_path, 'w') as file:
                 json.dump(self.offdesign_results, file, indent=4)
+        if debug_log:
+            with open('debug_log.txt', 'w') as file:
+                if not log_text:
+                    file.write('### All simulations converged. ###')
+                else:
+                    file.write(log_text)
 
     def calc_partload_char(self, **kwargs):
         """

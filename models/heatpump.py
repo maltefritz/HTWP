@@ -1348,7 +1348,7 @@ class HeatpumpSingleStage(Heatpump):
             diagram.ax.set_xlabel('Spezifische Enthalpie in $kJ/kg$')
             diagram.ax.set_ylabel('Druck in $bar$')
         elif diagram_type == 'Ts':
-            diagram.ax.set_xlabel('Spezifische Entropie in $kJ/(kg \\cdot K)')
+            diagram.ax.set_xlabel('Spezifische Entropie in $kJ/(kg \\cdot K)$')
             diagram.ax.set_ylabel('Temperatur in $°C$')
         diagram.ax.set_xlim(xlims[0], xlims[1])
         diagram.ax.set_ylim(ylims[0], ylims[1])

@@ -1165,10 +1165,31 @@ class HeatpumpSingleStage(Heatpump):
         self.cop = abs(self.busses['heat'].P.val)/self.busses['power'].P.val
         print(f'COP = {self.cop:.4}')
 
-    def generate_logph(self, xlims=(100, 600), ylims=(1e0, 3e2),
-                       display_info=True, return_diagram=False,
-                       save_file=True, open_file=True):
-        """Plot the heat pump cycle in logp-h-diagram of chosen refrigerant."""
+    def generate_state_diagram(self, diagram_type='logph', xlims=list(),
+                               ylims=list(), display_info=True,
+                               return_diagram=False, save_file=True,
+                               open_file=True):
+        """
+        Plot the heat pump cycle in a state diagram of chosen refrigerant.
+
+        Parameters
+        ----------
+        diagram_type : str
+            Type of state diagram. Valid options are 'logph' and 'Ts'.
+        """
+        # Define axis and isoline state variables
+        if diagram_type == 'logph':
+            var = {'x': 'h', 'y': 'p', 'isolines': ['T', 's']}
+        elif diagram_type == 'Ts':
+            var = {'x': 's', 'y': 'T', 'isolines': ['h', 'p']}
+        else:
+            print(
+                'Parameter "diagram_type" has to be set correctly. Valid '
+                + 'diagram types are "logph" and "Ts".'
+                )
+            return
+
+        # Get plotting data of each component
         if not self.param['design']['int_heatex']:
             results = {
                 self.components['Valve 1'].label:
@@ -1198,6 +1219,7 @@ class HeatpumpSingleStage(Heatpump):
                     self.components['Condenser 1'].get_plotting_data()[1]
                 }
 
+        # Set state diagram properties
         diagram = FluidPropertyDiagram(
             fluid=self.param['design']['refrigerant']
             )
@@ -1208,79 +1230,82 @@ class HeatpumpSingleStage(Heatpump):
                 **data
                 )
 
-        isoT = np.arange(-100, 350, 25)
-        isoS = np.arange(0, 10000, 500)
+        # Generate isolines
+        with open('state_diagram_config.json', 'r') as file:
+            config = json.load(file)
 
-        if self.param['design']['refrigerant'] == 'NH3':
-            isoS = np.arange(0, 10000, 500)
+        state_props = config[self.param['design']['refrigerant']]
+        iso1 = np.arange(
+            state_props[var['isolines'][0]]['isorange_low'],
+            state_props[var['isolines'][0]]['isorange_high'],
+            state_props[var['isolines'][0]]['isorange_step']
+            )
+        iso2 = np.arange(
+            state_props[var['isolines'][1]]['isorange_low'],
+            state_props[var['isolines'][1]]['isorange_high'],
+            state_props[var['isolines'][1]]['isorange_step']
+            )
 
-            xmin = 250
-            xmax = 2250
-
-            infocoords = (0.9, 0.87)
-
-        elif self.param['design']['refrigerant'] == 'R1234ZE':
-            isoS = np.arange(0, 2200, 50)
-
-            xmin = 150
-            xmax = 500
-
-            infocoords = (0.9, 0.87)
-
-        elif self.param['design']['refrigerant'] == 'R134A':
-            isoS = np.arange(0, 3000, 100)
-
-            xmin = 100
-            xmax = 600
-
-            infocoords = (0.895, 0.8775)
-
-        elif self.param['design']['refrigerant'] == 'R245FA':
-            isoS = np.arange(0, 4000, 100)
-
-            xmin = 100
-            xmax = 600
-            ymin = 1e-1
-
-            infocoords = (0.865, 0.86)
-
-        # draw isolines
-        diagram.set_isolines(T=isoT, s=isoS)
+        diagram.set_isolines(**{
+            var['isolines'][0]: iso1,
+            var['isolines'][1]: iso2
+            })
         diagram.calc_isolines()
+
+        # Set and possibly overwrite standard axes limits
+        if not xlims:
+            xlims = (
+                state_props[var['x']]['min'], state_props[var['x']]['max']
+                )
+        if not ylims:
+            ylims = (
+                state_props[var['y']]['min'], state_props[var['y']]['max']
+                )
         diagram.set_limits(
             x_min=xlims[0], x_max=xlims[1], y_min=ylims[0], y_max=ylims[1]
             )
-        diagram.draw_isolines(diagram_type='logph')
+        diagram.draw_isolines(diagram_type=diagram_type)
 
         for i, key in enumerate(results.keys()):
             datapoints = results[key]['datapoints']
             if key == 'Compressor 1':
                 diagram.ax.plot(
-                    datapoints['h'][1:], datapoints['p'][1:], color='#EC6707'
+                    datapoints[var['x']][1:], datapoints[var['y']][1:],
+                    color='#EC6707'
                     )
                 diagram.ax.scatter(
-                    datapoints['h'][1], datapoints['p'][1], color='#B54036',
+                    datapoints[var['x']][1], datapoints[var['y']][1],
+                    color='#B54036',
                     label=f'$\\bf{i+1:.0f}$: {key}', s=100, alpha=0.5
                     )
                 diagram.ax.annotate(
-                    f'{i+1:.0f}', (datapoints['h'][1], datapoints['p'][1]),
+                    f'{i+1:.0f}',
+                    (datapoints[var['x']][1], datapoints[var['y']][1]),
                     ha='center', va='center', color='w'
                     )
             else:
                 diagram.ax.plot(
-                    datapoints['h'], datapoints['p'], color='#EC6707'
+                    datapoints[var['x']], datapoints[var['y']],
+                    color='#EC6707'
                     )
                 diagram.ax.scatter(
-                    datapoints['h'][0], datapoints['p'][0], color='#B54036',
+                    datapoints[var['x']][0], datapoints[var['y']][0],
+                    color='#B54036',
                     label=f'$\\bf{i+1:.0f}$: {key}', s=100, alpha=0.5
                     )
                 diagram.ax.annotate(
-                    f'{i+1:.0f}', (datapoints['h'][0], datapoints['p'][0]),
+                    f'{i+1:.0f}',
+                    (datapoints[var['x']][0], datapoints[var['y']][0]),
                     ha='center', va='center', color='w'
                     )
 
         if display_info:
             # display info box containing key parameters
+            if not self.param['design']['int_heatex']:
+                infocoords = (0.01, 0.815)
+            else:
+                infocoords = (0.01, 0.79)
+
             info = (
                 '$\\bf{{Wärmepumpe}}$\n'
                 + f'Setup {self.param["design"]["setup"]}\n'
@@ -1317,7 +1342,14 @@ class HeatpumpSingleStage(Heatpump):
                 bbox=dict(boxstyle='round,pad=0.3', fc='white')
                 )
 
-        diagram.ax.legend(loc='upper left')
+        # Additional plotting parameters
+        diagram.ax.legend(loc='upper right')
+        if diagram_type == 'logph':
+            diagram.ax.set_xlabel('Spezifische Enthalpie in $kJ/kg$')
+            diagram.ax.set_ylabel('Druck in $bar$')
+        elif diagram_type == 'Ts':
+            diagram.ax.set_xlabel('Spezifische Entropie in $kJ/(kg \\cdot K)')
+            diagram.ax.set_ylabel('Temperatur in $°C$')
         diagram.ax.set_xlim(xlims[0], xlims[1])
         diagram.ax.set_ylim(ylims[0], ylims[1])
 

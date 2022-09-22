@@ -148,5 +148,35 @@
             "isorange_high": 350,
             "isorange_step": 25
         }
+    },
+    "MISC": {
+        "h": {
+            "min": 150,
+            "max": 500,
+            "isorange_low": 150,
+            "isorange_high": 550,
+            "isorange_step": 50
+        },
+        "p": {
+            "min": 1e0,
+            "max": 3e2,
+            "isorange_low": 10,
+            "isorange_high": 150,
+            "isorange_step": 10
+        },
+        "s": {
+            "min": 0,
+            "max": 2200,
+            "isorange_low": 0,
+            "isorange_high": 2200,
+            "isorange_step": 50
+        },
+        "T": {
+            "min": 0,
+            "max": 300,
+            "isorange_low": -150,
+            "isorange_high": 350,
+            "isorange_step": 25
+        }
     }
 }

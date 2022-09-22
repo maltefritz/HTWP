@@ -1234,7 +1234,11 @@ class HeatpumpSingleStage(Heatpump):
         with open('state_diagram_config.json', 'r') as file:
             config = json.load(file)
 
-        state_props = config[self.param['design']['refrigerant']]
+        if self.param['design']['refrigerant'] in config:
+            state_props = config[self.param['design']['refrigerant']]
+        else:
+            state_props = config['MISC']
+
         iso1 = np.arange(
             state_props[var['isolines'][0]]['isorange_low'],
             state_props[var['isolines'][0]]['isorange_high'],

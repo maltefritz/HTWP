@@ -37,6 +37,11 @@ class Heatpump():
     nr_cycles : int
         number of cycles/stages of the heat pump
 
+    heatex_type : dict
+        dictionary where each key is the integer index of the cycle and the
+        value is the type of the heat exchanger, that is transfering heat out
+        of the cycle. Valid types are 'Condenser' and 'HeatExchanger'.
+
     int_heatex : dict
         dictionary where each key is the integer index of the cycle of the hot
         side of an internal heat exchanger and the value is either a single
@@ -69,10 +74,11 @@ class Heatpump():
     labelling of the components.
     """
 
-    def __init__(self, fluids, nr_cycles=1, int_heatex={}, intercooler={},
-                 **kwargs):
+    def __init__(self, fluids, nr_cycles=1, heatex_type={1: 'Condenser'},
+                 int_heatex={}, intercooler={}, **kwargs):
         self.fluids = fluids
         self.nr_cycles = nr_cycles
+        self.heatex_type = heatex_type
         self.int_heatex = int_heatex
         self.intercooler = intercooler
 
@@ -148,17 +154,24 @@ class Heatpump():
             # Valve for each cycle
             self.components[f'Valve {cycle}'] = Valve(f'Valve {cycle}')
 
-            if cycle != 1:
-                # Heat exchanger between each cycle
-                self.components[f'Heat Exchanger {cycle-1}_{cycle}'] = (
-                    HeatExchanger(f'Heat Exchanger {cycle-1}_{cycle}')
-                    )
-
-            if cycle == self.nr_cycles:
-                # Condenser in the upper most cycle
-                self.components[f'Condenser {cycle}'] = Condenser(
-                    f'Condenser {cycle}'
-                    )
+            if self.heatex_type[cycle] == 'HeatExchanger':
+                if cycle < self.nr_cycles:
+                    self.components[f'Heat Exchanger {cycle}_{cycle+1}'] = (
+                        HeatExchanger(f'Heat Exchanger {cycle}_{cycle+1}')
+                        )
+                else:
+                    self.components[f'Heat Exchanger {cycle}'] = (
+                        HeatExchanger(f'Heat Exchanger {cycle}')
+                        )
+            elif self.heatex_type[cycle] == 'Condenser':
+                if cycle < self.nr_cycles:
+                    self.components[f'Condenser {cycle}_{cycle+1}'] = (
+                        Condenser(f'Condenser {cycle}_{cycle+1}')
+                        )
+                else:
+                    self.components[f'Condenser {cycle}'] = (
+                        Condenser(f'Condenser {cycle}')
+                        )
 
             # Intercoolers where they are placed by user
             if cycle in self.intercooler.keys():
@@ -177,7 +190,7 @@ class Heatpump():
 
                     # Necessary amount of compressors due to intercoolers
                     self.components[f'Compressor {cycle}-{i}'] = Compressor(
-                        f'Compressor {cycle}_{i}'
+                        f'Compressor {cycle}-{i}'
                         )
             else:
                 # Single compressors for each cycle without intercooler
@@ -229,16 +242,6 @@ class Heatpump():
             'Consumer Recirculation Pump', 'in1'
             )
         self.set_conn(
-            f'heatsink_pump_to_cond{self.nr_cycles}',
-            'Consumer Recirculation Pump', 'out1',
-            f'Condenser {self.nr_cycles}', 'in2'
-            )
-        self.set_conn(
-            f'cond{self.nr_cycles}_to_consumer',
-            f'Condenser {self.nr_cycles}', 'out2',
-            'Consumer', 'in1'
-            )
-        self.set_conn(
             'consumer_to_heatsink_cc',
             'Consumer', 'out1',
             'Consumer Cycle Closer', 'in1'
@@ -251,12 +254,42 @@ class Heatpump():
                 f'Valve {cycle}', 'in1'
                 )
 
-            if cycle != 1:
-                self.set_conn(
-                   f'valve{cycle}_to_heat_ex{cycle-1}_{cycle}',
-                   f'Valve {cycle}', 'out1',
-                   f'Heat Exchanger {cycle-1}_{cycle}', 'in2'
-                   )
+            if self.heatex_type[cycle] == 'HeatExchanger':
+                if cycle < self.nr_cycles:
+                    self.set_conn(
+                       f'valve{cycle+1}_to_heat_ex{cycle}_{cycle+1}',
+                       f'Valve {cycle+1}', 'out1',
+                       f'Heat Exchanger {cycle}_{cycle+1}', 'in2'
+                       )
+                else:
+                    self.set_conn(
+                        f'heatsink_pump_to_heatex{cycle}',
+                        'Consumer Recirculation Pump', 'out1',
+                        f'Heat Exchanger {cycle}', 'in2'
+                        )
+                    self.set_conn(
+                        f'heatex{cycle}_to_consumer',
+                        f'Heat Exchanger {cycle}', 'out2',
+                        'Consumer', 'in1'
+                        )
+            elif self.heatex_type[cycle] == 'Condenser':
+                if cycle < self.nr_cycles:
+                    self.set_conn(
+                       f'valve{cycle+1}_to_cond{cycle}_{cycle+1}',
+                       f'Valve {cycle+1}', 'out1',
+                       f'Condenser {cycle}_{cycle+1}', 'in2'
+                       )
+                else:
+                    self.set_conn(
+                        f'heatsink_pump_to_cond{cycle}',
+                        'Consumer Recirculation Pump', 'out1',
+                        f'Condenser {cycle}', 'in2'
+                        )
+                    self.set_conn(
+                        f'cond{cycle}_to_consumer',
+                        f'Condenser {cycle}', 'out2',
+                        'Consumer', 'in1'
+                        )
 
             cycle_int_heatex = list()
             for i in range(1, self.nr_cycles+1):
@@ -279,14 +312,23 @@ class Heatpump():
                             f'Internal Heat Exchanger {c_int_heatex}_{cycle}',
                             'in2'
                             )
-                    else:
-                        self.set_conn(
-                            (f'heatex{cycle-1}_{cycle}_to_'
-                             + f'int_heatex{c_int_heatex}_{cycle}'),
-                            f'Heat Exchanger {cycle-1}_{cycle}', 'out2',
-                            f'Internal Heat Exchanger {c_int_heatex}_{cycle}',
-                            'in2'
-                            )
+                    elif cycle <= self.nr_cycles:
+                        if self.heatex_type[cycle-1] == 'HeatExchanger':
+                            self.set_conn(
+                                (f'heatex{cycle-1}_{cycle}_to_'
+                                 + f'int_heatex{c_int_heatex}_{cycle}'),
+                                f'Heat Exchanger {cycle-1}_{cycle}', 'out2',
+                                ('Internal Heat Exchanger '
+                                 + f'{c_int_heatex}_{cycle}'), 'in2'
+                                )
+                        elif self.heatex_type[cycle-1] == 'Condenser':
+                            self.set_conn(
+                                (f'cond{cycle-1}_{cycle}_to_'
+                                 + f'int_heatex{c_int_heatex}_{cycle}'),
+                                f'Condenser {cycle-1}_{cycle}', 'out2',
+                                ('Internal Heat Exchanger '
+                                 + f'{c_int_heatex}_{cycle}'), 'in2'
+                                )
                 else:
                     self.set_conn(
                         (f'int_heatex{last_int_heatex}_{cycle}'
@@ -306,12 +348,19 @@ class Heatpump():
                             f'Evaporator 1', 'out2',
                             f'Compressor {cycle}-1', 'in1'
                             )
-                    else:
-                        self.set_conn(
-                            f'heatex{cycle-1}_{cycle}_to_comp{cycle}',
-                            f'Heat Exchanger {cycle-1}_{cycle}', 'out2',
-                            f'Compressor {cycle}-1', 'in1'
-                            )
+                    elif cycle <= self.nr_cycles:
+                        if self.heatex_type[cycle-1] == 'HeatExchanger':
+                            self.set_conn(
+                                f'heatex{cycle-1}_{cycle}_to_comp{cycle}',
+                                f'Heat Exchanger {cycle-1}_{cycle}', 'out2',
+                                f'Compressor {cycle}-1', 'in1'
+                                )
+                        elif self.heatex_type[cycle-1] == 'Condenser':
+                            self.set_conn(
+                                f'cond{cycle-1}_{cycle}_to_comp{cycle}',
+                                f'Condenser {cycle-1}_{cycle}', 'out2',
+                                f'Compressor {cycle}-1', 'in1'
+                                )
                 else:
                     self.set_conn(
                         f'int_heatex{last_int_heatex}_{cycle}_to_comp{cycle}',
@@ -331,23 +380,47 @@ class Heatpump():
                         f'Compressor {cycle}-{i+1}', 'in1'
                         )
                 if cycle == self.nr_cycles:
-                    self.set_conn(
-                        (f'comp{cycle}-{self.intercooler[cycle]["amount"]+1}'
-                         + f'_to_cond{cycle}'),
-                        (f'Compressor {cycle}'
-                         + f'-{self.intercooler[cycle]["amount"]+1}'),
-                        'out1',
-                        f'Condenser {cycle}', 'in1'
-                        )
+                    if self.heatex_type[cycle] == 'HeatExchanger':
+                        self.set_conn(
+                            (f'comp{cycle}-'
+                             + f'{self.intercooler[cycle]["amount"]+1}'
+                             + f'_to_heatex{cycle}'),
+                            (f'Compressor {cycle}'
+                             + f'-{self.intercooler[cycle]["amount"]+1}'),
+                            'out1',
+                            f'Heat Exchanger {cycle}', 'in1'
+                            )
+                    elif self.heatex_type[cycle] == 'Condenser':
+                        self.set_conn(
+                            (f'comp{cycle}-'
+                             + f'{self.intercooler[cycle]["amount"]+1}'
+                             + f'_to_cond{cycle}'),
+                            (f'Compressor {cycle}'
+                             + f'-{self.intercooler[cycle]["amount"]+1}'),
+                            'out1',
+                            f'Condenser {cycle}', 'in1'
+                            )
                 else:
-                    self.set_conn(
-                        (f'comp{cycle}-{self.intercooler[cycle]["amount"]+1}'
-                         + f'_to_heatex{cycle}_{cycle+1}'),
-                        (f'Compressor {cycle}'
-                         + f'-{self.intercooler[cycle]["amount"]+1}'),
-                        'out1',
-                        f'Heat Exchanger {cycle}_{cycle+1}', 'in1'
-                        )
+                    if self.heatex_type[cycle] == 'HeatExchanger':
+                        self.set_conn(
+                            (f'comp{cycle}-'
+                             + f'{self.intercooler[cycle]["amount"]+1}'
+                             + f'_to_heatex{cycle}_{cycle+1}'),
+                            (f'Compressor {cycle}'
+                             + f'-{self.intercooler[cycle]["amount"]+1}'),
+                            'out1',
+                            f'Heat Exchanger {cycle}_{cycle+1}', 'in1'
+                            )
+                    elif self.heatex_type[cycle] == 'Condenser':
+                        self.set_conn(
+                            (f'comp{cycle}-'
+                             + f'{self.intercooler[cycle]["amount"]+1}'
+                             + f'_to_cond{cycle}_{cycle+1}'),
+                            (f'Compressor {cycle}'
+                             + f'-{self.intercooler[cycle]["amount"]+1}'),
+                            'out1',
+                            f'Condenser {cycle}_{cycle+1}', 'in1'
+                            )
 
             else:
                 if not last_int_heatex:
@@ -358,11 +431,18 @@ class Heatpump():
                             f'Compressor {cycle}', 'in1'
                             )
                     else:
-                        self.set_conn(
-                            f'heatex{cycle-1}_{cycle}_to_comp{cycle}',
-                            f'Heat Exchanger {cycle-1}_{cycle}', 'out2',
-                            f'Compressor {cycle}', 'in1'
-                            )
+                        if self.heatex_type[cycle-1] == 'HeatExchanger':
+                            self.set_conn(
+                                f'heatex{cycle-1}_{cycle}_to_comp{cycle}',
+                                f'Heat Exchanger {cycle-1}_{cycle}', 'out2',
+                                f'Compressor {cycle}', 'in1'
+                                )
+                        elif self.heatex_type[cycle-1] == 'Condenser':
+                            self.set_conn(
+                                f'cond{cycle-1}_{cycle}_to_comp{cycle}',
+                                f'Condenser {cycle-1}_{cycle}', 'out2',
+                                f'Compressor {cycle}', 'in1'
+                                )
                 else:
                     self.set_conn(
                         f'int_heatex{last_int_heatex}_{cycle}_to_comp{cycle}',
@@ -371,17 +451,31 @@ class Heatpump():
                         f'Compressor {cycle}', 'in1'
                         )
                 if cycle == self.nr_cycles:
-                    self.set_conn(
-                        f'comp{cycle}_to_cond{cycle}',
-                        f'Compressor {cycle}', 'out1',
-                        f'Condenser {cycle}', 'in1'
-                        )
+                    if self.heatex_type[cycle] == 'HeatExchanger':
+                        self.set_conn(
+                            f'comp{cycle}_to_heatex{cycle}',
+                            f'Compressor {cycle}', 'out1',
+                            f'Heat Exchanger {cycle}', 'in1'
+                            )
+                    elif self.heatex_type[cycle] == 'Condenser':
+                        self.set_conn(
+                            f'comp{cycle}_to_cond{cycle}',
+                            f'Compressor {cycle}', 'out1',
+                            f'Condenser {cycle}', 'in1'
+                            )
                 else:
-                    self.set_conn(
-                        f'comp{cycle}_to_heatex{cycle}_{cycle+1}',
-                        f'Compressor {cycle}', 'out1',
-                        f'Heat Exchanger {cycle}_{cycle+1}', 'in1'
-                        )
+                    if self.heatex_type[cycle] == 'HeatExchanger':
+                        self.set_conn(
+                            f'comp{cycle}_to_heatex{cycle}_{cycle+1}',
+                            f'Compressor {cycle}', 'out1',
+                            f'Heat Exchanger {cycle}_{cycle+1}', 'in1'
+                            )
+                    elif self.heatex_type[cycle] == 'Condenser':
+                        self.set_conn(
+                            f'comp{cycle}_to_cond{cycle}_{cycle+1}',
+                            f'Compressor {cycle}', 'out1',
+                            f'Condenser {cycle}_{cycle+1}', 'in1'
+                            )
 
             int_heatexs = [
                 comp for comp in self.components
@@ -393,18 +487,33 @@ class Heatpump():
                 int_heatex_idx = int_heatex.split(' ')[-1]
                 if not last_int_heatex:
                     if cycle == self.nr_cycles:
-                        self.set_conn(
-                            f'cond{cycle}_to_int_heatex{int_heatex_idx}',
-                            f'Condenser {cycle}', 'out1',
-                            int_heatex, 'in1'
-                            )
+                        if self.heatex_type[cycle] == 'HeatExchanger':
+                            self.set_conn(
+                                f'heatex{cycle}_to_int_heatex{int_heatex_idx}',
+                                f'Heat Exchanger {cycle}', 'out1',
+                                int_heatex, 'in1'
+                                )
+                        elif self.heatex_type[cycle] == 'Condenser':
+                            self.set_conn(
+                                f'cond{cycle}_to_int_heatex{int_heatex_idx}',
+                                f'Condenser {cycle}', 'out1',
+                                int_heatex, 'in1'
+                                )
                     else:
-                        self.set_conn(
-                            (f'heatex{cycle}_{cycle+1}'
-                             + f'_to_int_heatex{int_heatex_idx}'),
-                            f'Heat Exchanger {cycle}_{cycle+1}', 'out1',
-                            int_heatex, 'in1'
-                            )
+                        if self.heatex_type[cycle] == 'HeatExchanger':
+                            self.set_conn(
+                                (f'heatex{cycle}_{cycle+1}'
+                                 + f'_to_int_heatex{int_heatex_idx}'),
+                                f'Heat Exchanger {cycle}_{cycle+1}', 'out1',
+                                int_heatex, 'in1'
+                                )
+                        elif self.heatex_type[cycle] == 'Condenser':
+                            self.set_conn(
+                                (f'cond{cycle}_{cycle+1}'
+                                 + f'_to_int_heatex{int_heatex_idx}'),
+                                f'Condenser {cycle}_{cycle+1}', 'out1',
+                                int_heatex, 'in1'
+                                )
                 else:
                     last_int_heatex_idx = last_int_heatex.split(' ')[-1]
                     self.set_conn(
@@ -417,17 +526,31 @@ class Heatpump():
 
             if not last_int_heatex:
                 if cycle == self.nr_cycles:
-                    self.set_conn(
-                        f'cond{cycle}_to_cc{cycle}',
-                        f'Condenser {cycle}', 'out1',
-                        f'Cycle Closer {cycle}', 'in1'
-                        )
+                    if self.heatex_type[cycle] == 'HeatExchanger':
+                        self.set_conn(
+                            f'heatex{cycle}_to_cc{cycle}',
+                            f'Heat Exchanger {cycle}', 'out1',
+                            f'Cycle Closer {cycle}', 'in1'
+                            )
+                    elif self.heatex_type[cycle] == 'Condenser':
+                        self.set_conn(
+                            f'cond{cycle}_to_cc{cycle}',
+                            f'Condenser {cycle}', 'out1',
+                            f'Cycle Closer {cycle}', 'in1'
+                            )
                 else:
-                    self.set_conn(
-                        f'heatex{cycle}_{cycle+1}_to_cc{cycle}',
-                        f'Heat Exchanger {cycle}_{cycle+1}', 'out1',
-                        f'Cycle Closer {cycle}', 'in1'
-                        )
+                    if self.heatex_type[cycle] == 'HeatExchanger':
+                        self.set_conn(
+                            f'heatex{cycle}_{cycle+1}_to_cc{cycle}',
+                            f'Heat Exchanger {cycle}_{cycle+1}', 'out1',
+                            f'Cycle Closer {cycle}', 'in1'
+                            )
+                    elif self.heatex_type[cycle] == 'Condenser':
+                        self.set_conn(
+                            f'cond{cycle}_{cycle+1}_to_cc{cycle}',
+                            f'Condenser {cycle}_{cycle+1}', 'out1',
+                            f'Cycle Closer {cycle}', 'in1'
+                            )
             else:
                 last_int_heatex_idx = last_int_heatex.split(' ')[-1]
                 self.set_conn(
@@ -1994,21 +2117,25 @@ if __name__ == '__main__':
     #     ['water', 'NH3'], nr_cycles=2, int_heatex={2: [1, 2]},
     #     intercooler={1: {'amount': 2, 'type': 'HeatExchanger'}}
     #     )
+    # hp = Heatpump(
+    #     ['water', 'NH3'], nr_cycles=2,
+    #     heatex_type={1: 'HeatExchanger', 2: 'Condenser'}
+    #     )
 
-    # import json
-    # with open('parameter.json', 'r') as file:
-    #     param = json.load(file)
-
-    # hp = HeatpumpSingleStage(param)
-    # hp.init_simulation()
-    # hp.design_simulation()
-    # hp.generate_logph()
-
-    with open('parameter_dual.json', 'r') as file:
+    import json
+    with open('parameter.json', 'r') as file:
         param = json.load(file)
 
-    hp = HeatpumpDualStage(param)
+    hp = HeatpumpSingleStage(param)
     hp.init_simulation()
     hp.design_simulation()
-    # hp.generate_logph(cycle=1)
-    hp.generate_logph(cycle=2)
+    # hp.generate_logph()
+
+    # with open('parameter_dual.json', 'r') as file:
+    #     param = json.load(file)
+
+    # hp = HeatpumpDualStage(param)
+    # hp.init_simulation()
+    # hp.design_simulation()
+    # # hp.generate_logph(cycle=1)
+    # hp.generate_logph(cycle=2)

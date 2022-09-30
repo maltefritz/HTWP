@@ -1745,8 +1745,8 @@ class HeatpumpSingleStageTranscritical(Heatpump):
                     self.components['Evaporator 1'].get_plotting_data()[2],
                 self.components['Compressor 1'].label:
                     self.components['Compressor 1'].get_plotting_data()[1],
-                self.components['Condenser 1'].label:
-                    self.components['Condenser 1'].get_plotting_data()[1]
+                self.components['Heat Exchanger 1'].label:
+                    self.components['Heat Exchanger 1'].get_plotting_data()[1]
                 }
         else:
             label_int_heatex = 'Internal Heat Exchanger 1_1'
@@ -1762,8 +1762,8 @@ class HeatpumpSingleStageTranscritical(Heatpump):
                     self.components[label_int_heatex].get_plotting_data()[2],
                 self.components['Compressor 1'].label:
                     self.components['Compressor 1'].get_plotting_data()[1],
-                self.components['Condenser 1'].label:
-                    self.components['Condenser 1'].get_plotting_data()[1]
+                self.components['Heat Exchanger 1'].label:
+                    self.components['Heat Exchanger 1'].get_plotting_data()[1]
                 }
 
         # Set state diagram properties

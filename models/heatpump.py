@@ -621,7 +621,8 @@ class Heatpump():
         self.nw.solve('design')
         self.nw.print_results()
         self.cop = abs(self.busses['heat'].P.val)/self.busses['power'].P.val
- 
+        print(f'COP = {self.cop:.4}')
+
     def offdesign_simulation(self, debug_log=False):
         """Calculate partload characteristic of heat pump."""
         if not self.solved_design:

@@ -1262,7 +1262,6 @@ class HeatpumpSingleStage(Heatpump):
             self.connections['cond1_to_cc1'].set_attr(p=None)
             self.components['Condenser 1'].set_attr(ttd_u=2)
 
-            self.connections['comp1_to_cond1'].set_attr(h=None)
         else:
             self.connections['evaporator1_to_int_heatex1_1'].set_attr(p=None)
             self.components['Evaporator 1'].set_attr(ttd_l=2)
@@ -1689,7 +1688,6 @@ class HeatpumpSingleStageTranscritical(Heatpump):
             self.connections['cond1_to_cc1'].set_attr(p=None)
             self.components['Condenser 1'].set_attr(ttd_u=2)
 
-            self.connections['comp1_to_cond1'].set_attr(h=None)
         else:
             self.connections['evaporator1_to_int_heatex1_1'].set_attr(p=None)
             self.components['Evaporator 1'].set_attr(ttd_l=2)

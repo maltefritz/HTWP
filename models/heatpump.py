@@ -616,6 +616,12 @@ class Heatpump():
 
         self.connections = connections_copy
 
+    def solve_design(self):
+        """Perform simulation with 'design' mode."""
+        self.nw.solve('design')
+        self.nw.print_results()
+        self.cop = abs(self.busses['heat'].P.val)/self.busses['power'].P.val
+ 
     def offdesign_simulation(self, debug_log=False):
         """Calculate partload characteristic of heat pump."""
         if not self.solved_design:
@@ -1281,13 +1287,6 @@ class HeatpumpSingleStage(Heatpump):
         self.nw.save(self.design_path)
         self.solved_design = True
 
-    def solve_design(self):
-        """Perform simulation with 'design' mode."""
-        self.nw.solve('design')
-        self.nw.print_results()
-        self.cop = abs(self.busses['heat'].P.val)/self.busses['power'].P.val
-        print(f'COP = {self.cop:.4}')
-
     def generate_state_diagram(self, diagram_type='logph', xlims=list(),
                                ylims=list(), display_info=True,
                                return_diagram=False, save_file=True,
@@ -1714,13 +1713,6 @@ class HeatpumpSingleStageTranscritical(Heatpump):
         self.design_path = 'hp_ss_design'
         self.nw.save(self.design_path)
         self.solved_design = True
-
-    def solve_design(self):
-        """Perform simulation with 'design' mode."""
-        self.nw.solve('design')
-        self.nw.print_results()
-        self.cop = abs(self.busses['heat'].P.val)/self.busses['power'].P.val
-        print(f'COP = {self.cop:.4}')
 
     def generate_state_diagram(self, diagram_type='logph', xlims=list(),
                                ylims=list(), display_info=True,
@@ -2291,13 +2283,6 @@ class HeatpumpDualStage(Heatpump):
         self.design_path = 'hp_ds_design'
         self.nw.save(self.design_path)
         self.solved_design = True
-
-    def solve_design(self):
-        """Perform simulation with 'design' mode."""
-        self.nw.solve('design')
-        self.nw.print_results()
-        self.cop = abs(self.busses['heat'].P.val)/self.busses['power'].P.val
-        print(f'COP = {self.cop:.4}')
 
     def generate_logph(self, cycle, xlims=(100, 600), ylims=(1e0, 3e2),
                        display_info=True, return_diagram=False,

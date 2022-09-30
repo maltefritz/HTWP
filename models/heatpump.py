@@ -1598,7 +1598,7 @@ class HeatpumpSingleStageTranscritical(Heatpump):
         if not self.param['design']['int_heatex']:
             self.connections['evaporator1_to_comp1'].set_attr(x=1, p=p_evap)
             self.connections['heatex1_to_cc1'].set_attr(
-                p=self.param['design']['p_high'],
+                p=self.param['design']['p_high'], h=h_top_left,
                 fluid={'water': 0, self.param['design']['refrigerant']: 1}
                 )
         else:
@@ -1606,7 +1606,7 @@ class HeatpumpSingleStageTranscritical(Heatpump):
                 x=1, p=p_evap
                 )
             self.connections['heatex1_to_int_heatex1_1'].set_attr(
-                p=self.param['design']['p_high'],
+                p=self.param['design']['p_high'], h=h_top_left,
                 fluid={'water': 0, self.param['design']['refrigerant']: 1}
                 )
             self.connections['int_heatex1_1_to_cc1'].set_attr(
@@ -1685,15 +1685,15 @@ class HeatpumpSingleStageTranscritical(Heatpump):
             self.connections['evaporator1_to_comp1'].set_attr(p=None)
             self.components['Evaporator 1'].set_attr(ttd_l=2)
 
-            self.connections['cond1_to_cc1'].set_attr(p=None)
-            self.components['Condenser 1'].set_attr(ttd_u=2)
+            self.connections['heatex1_to_cc1'].set_attr(h=None)
+            self.components['Heat Exchanger 1'].set_attr(ttd_l=2)
 
         else:
             self.connections['evaporator1_to_int_heatex1_1'].set_attr(p=None)
             self.components['Evaporator 1'].set_attr(ttd_l=2)
 
-            self.connections['cond1_to_int_heatex1_1'].set_attr(p=None)
-            self.components['Condenser 1'].set_attr(ttd_u=2)
+            self.connections['heatex1_to_int_heatex1_1'].set_attr(h=None)
+            self.components['Heat Exchanger 1'].set_attr(ttd_l=2)
 
             self.connections['int_heatex1_1_to_cc1'].set_attr(h=None)
             self.connections['int_heatex1_1_to_comp1'].set_attr(

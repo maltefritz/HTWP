@@ -1,3 +1,9 @@
+tespy==0.6.3
 oemof.solph==0.5.1
 pandas
 numpy
+matplotlib
+scikit-learn
+scipy
+coolprop
+fluprodia

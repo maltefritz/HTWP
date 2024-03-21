@@ -1,0 +1,63 @@
+{
+    "hp": {
+        "op_cost_var": 1.20,
+        "op_cost_fix": 4000.00,
+        "inv_spez_m": 259518.54,
+        "inv_spez_b": 1421408.49,
+        "cap_max": 50,
+        "cap_min": 0,
+        "amount": 7
+    },
+    "ccet": {
+        "op_cost_var": 4.40,
+        "op_cost_fix": 29300.00,
+        "inv_spez": 880000.00,
+        "cap_max": 353,
+        "cap_min": 0
+    },
+    "plb": {
+        "Q_rel_max": 1.0,
+        "Q_rel_min": 0.15,
+        "eta": 0.95,
+        "op_cost_var": 1.10,
+        "op_cost_fix": 1950.00,
+        "inv_spez": 60000.00,
+        "cap_max": 353,
+        "cap_min": 0
+    },
+    "st-tes": {
+        "inv_spez_m": 236.49,
+        "inv_spez_b": 207314.97,
+        "cap_max": 8472,
+        "cap_min": 144,
+        "Q_in_to_cap": 0.041666667,
+        "Q_rel_in_max": 1.0,
+        "Q_rel_in_min": 0.02,
+        "Q_out_to_cap": 0.041666667,
+        "Q_rel_out_max": 1.0,
+        "Q_rel_out_min": 0.02,
+        "Q_rel_loss": 5e-05,
+        "op_cost_var": 0.01,
+        "op_cost_fix": 3.0,
+        "balanced": true,
+        "init_storage": 0,
+        "inflow_conv": 1.0,
+        "outflow_conv": 1.0
+    },
+    "param": {
+        "mipgap": 0.02,
+        "ef_gas": 0.2012,
+        "elec_consumer_charges_grid": 52.52,
+        "elec_consumer_charges_self": 20.50,
+        "heat_price": 76.74,
+        "energy_tax": 5.50,
+        "chp_bonus": 0,
+        "h_max_chp_bonus": 0,
+        "TEHG_bonus": 0,
+        "vNNE": 7.0,
+        "use_BEW_op_bonus": false,
+        "BEW": 0,
+        "capital_interest": 0.05,
+        "lifetime": 20
+    }
+}

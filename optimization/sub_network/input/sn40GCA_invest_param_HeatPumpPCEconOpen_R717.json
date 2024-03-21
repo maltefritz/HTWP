@@ -1,0 +1,90 @@
+{
+    "sub hp": {
+        "op_cost_var": 1.2,
+        "op_cost_fix": 4000.0,
+        "inv_spez_m": 268976.23,
+        "inv_spez_b": 1465475.88,
+        "cap_max": 50,
+        "cap_min": 0,
+        "amount": 7
+    },
+    "hp": {
+        "op_cost_var": 1.2,
+        "op_cost_fix": 4000.0,
+        "inv_spez_m": 259518.54,
+        "inv_spez_b": 1421408.49,
+        "cap_max": 50,
+        "cap_min": 0,
+        "amount": 7
+    },
+    "prim": {
+        "Q_max": 9999,
+        "eta_prim": 0.8
+    },
+    "ccet": {
+        "Q_N": 342,
+        "op_cost_var": 4.4,
+        "op_cost_fix": 29300.0,
+        "inv_spez": 880000.0
+    },
+    "plb": {
+        "Q_N": 270,
+        "eta": 0.95,
+        "op_cost_var": 1.1,
+        "op_cost_fix": 1950.0,
+        "inv_spez": 60000.0
+    },
+    "st-tes": {
+        "inv_spez_m": 236.49,
+        "inv_spez_b": 207314.97,
+        "Q": 8472,
+        "Q_N_in": 353,
+        "Q_rel_in_max": 1.0,
+        "Q_rel_in_min": 0.02,
+        "Q_N_out": 353,
+        "Q_rel_out_max": 1.0,
+        "Q_rel_out_min": 0.02,
+        "Q_rel_loss": 5e-05,
+        "op_cost_var": 0.01,
+        "op_cost_fix": 3.0,
+        "balanced": true,
+        "init_storage": 0,
+        "inflow_conv": 1.0,
+        "outflow_conv": 1.0
+    },
+    "sub st-tes": {
+        "inv_spez_m": 236.49,
+        "inv_spez_b": 207314.97,
+        "cap_max": 846.792,
+        "cap_min": 8,
+        "Q_in_to_cap": 0.041666667,
+        "Q_rel_in_max": 1.0,
+        "Q_rel_in_min": 0.02,
+        "Q_out_to_cap": 0.041666667,
+        "Q_rel_out_max": 1.0,
+        "Q_rel_out_min": 0.02,
+        "Q_rel_loss": 5e-05,
+        "op_cost_var": 0.01,
+        "op_cost_fix": 3.0,
+        "balanced": true,
+        "init_storage": 0,
+        "inflow_conv": 1.0,
+        "outflow_conv": 1.0
+    },
+    "param": {
+        "mipgap": 0.01,
+        "ef_gas": 0.2012,
+        "elec_consumer_charges_grid": 52.52,
+        "elec_consumer_charges_self": 20.5,
+        "heat_price": 76.74,
+        "energy_tax": 5.5,
+        "chp_bonus": 0,
+        "h_max_chp_bonus": 0,
+        "TEHG_bonus": 0,
+        "vNNE": 7.0,
+        "use_BEW_op_bonus": false,
+        "BEW": 0,
+        "capital_interest": 0.05,
+        "lifetime": 20
+    }
+}

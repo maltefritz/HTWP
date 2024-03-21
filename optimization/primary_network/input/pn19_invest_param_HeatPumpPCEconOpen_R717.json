@@ -37,7 +37,7 @@
         "Q_rel_out_max": 1.0,
         "Q_rel_out_min": 0.02,
         "Q_rel_loss": 5e-05,
-        "op_cost_var": 0.0,
+        "op_cost_var": 0.01,
         "op_cost_fix": 3.0,
         "balanced": true,
         "init_storage": 0,
@@ -55,6 +55,7 @@
         "h_max_chp_bonus": 1500,
         "TEHG_bonus": 3.0,
         "vNNE": 7.0,
+        "use_BEW_op_bonus": true,
         "BEW": 0.4,
         "capital_interest": 0.05,
         "lifetime": 20

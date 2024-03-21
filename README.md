@@ -19,7 +19,7 @@ In addition to that, this directory contains an input and an output folder.
 
 ### Input
 
-All necessary input files of the analyzed heat pumps are placed in this folder. Additionally, the `'CEPCI.json'` stores cost values of the *Chemical Engineering Plant Cost Index*.
+All necessary input files of the analyzed heat pumps are placed in this folder. To use those for the different district heating system models, the temperatures in the strands `'B'` and `'C'`, as well as the part load parameter ranges in the `'offdesign'` field of the input files have to be adjusted. Additionally, the `'CEPCI.json'` stores cost values of the *Chemical Engineering Plant Cost Index*.
 
 ### Output
 

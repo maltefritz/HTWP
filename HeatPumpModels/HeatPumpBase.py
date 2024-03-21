@@ -424,14 +424,3 @@ class HeatPumpBase:
             os.mkdir(os.path.join(__file__, '..', 'stable'))
         if not os.path.exists(os.path.join(__file__, '..', 'output')):
             os.mkdir(os.path.join(__file__, '..', 'output'))
-
-
-if __name__ == '__main__':
-    parampath = os.path.join(
-        __file__, '..', 'input', f'params_hp_pc_econ_open.json'
-        )
-    with open(parampath, 'r') as file:
-        params = json.load(file)
-
-    hp = HeatPumpBase(params)
-    hp.create_ranges_var2()

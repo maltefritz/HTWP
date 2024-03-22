@@ -8,7 +8,7 @@ This repository contains additional information and data relating to the researc
 
 # The research project
 
-The research project was funded by the [*Gesellschaft für Energie und Klimaschutz Schleswig-Holstein* (EKSH)](https://www.eksh.org/) as part of the [*HWT Energie und Klimaschutz*](https://www.eksh.org/projekte/hwt-energie-klimaschutz) programme. [*ARCOTS Industriekälte AG*](https://www.arctos-ag.com/home/) served as the industry partner. The authors are greatful for the support from both partners.
+The authors [J. Freißmann](https://www.researchgate.net/profile/Jonas-Freissmann), [M.Fritz](https://www.researchgate.net/profile/Malte-Fritz-2) and [Prof. Dr.-Ing. Ilja Tuschy](https://hs-flensburg.de/hochschule/personen/tuschy) are part of the [*Center for Sustainable Energy Systems* (ZNES)](www.znes-flensburg.de) of the University of Applied Sciences and Europa-Universität Flensburg. The research project was funded by the [*Gesellschaft für Energie und Klimaschutz Schleswig-Holstein* (EKSH)](https://www.eksh.org/) as part of the [*HWT Energie und Klimaschutz*](https://www.eksh.org/projekte/hwt-energie-klimaschutz) programme. [*ARCOTS Industriekälte AG*](https://www.arctos-ag.com/home/) served as the industry partner. The authors are greatful for the support from both partners.
 
 # Description of contents
 

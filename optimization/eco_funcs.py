@@ -17,8 +17,6 @@ except ImportError:
         + 'be imported'
         )
 
-# import matplotlib.pyplot as plt
-
 def calc_bwsf(i, n):
     """Berechne Barwert Summenfaktor.
     
@@ -127,8 +125,6 @@ def emission_calc(data_all, data, param):
     """
     Calculate the emissions compared with overall and displacement mix.
 
-    WARNING! Only works with the primary network for now.
-
     Parameters
     ----------
     data_all : pandas.DataFrame
@@ -141,9 +137,6 @@ def emission_calc(data_all, data, param):
     param : dict
         JSON parameter file of user defined constants.
     """
-    print('WARNING! Only works with the primary network for now.')
-    # data_all['Emissions OM'] = [0 for _ in range(len(data_all.index))]
-    # data_all['Emissions DM'] = [0 for _ in range(len(data_all.index))]
     data_all['Emissions OM'] = 0
     data_all['Emissions DM'] = 0
 
@@ -307,10 +300,12 @@ def bew_op_bonus(SCOP, el_source_type='conventional'):
         'renewable' for direct use of renewable electricity sources.
         Defaults to 'conventional'
     """
-    if el_source_type == 'conventional':
-        bonus = (5.5 - (6.8 - 17/SCOP) * 0.75) * SCOP/(SCOP - 1)
-    elif el_source_type == 'renewable':
-        bonus = 3 - (8/2.5 - 8/SCOP) * 0.75
+    if SCOP < 2.5:
+        return 0
+    else:
+        if el_source_type == 'conventional':
+            bonus = (5.5 - (6.8 - 17/SCOP) * 0.75) * SCOP/(SCOP - 1)
+        elif el_source_type == 'renewable':
+            bonus = 3 - (8/2.5 - 8/SCOP) * 0.75
 
-    return min(bonus*10, 92.00)
-
+        return min(bonus*10, 92.00)

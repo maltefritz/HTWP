@@ -688,68 +688,30 @@ def IVgdh_network_invest(data, param):
                     ))}
         )
 
-    # solar_source = solph.components.Source(
-    #     label='solar thermal',
-    #     outputs={
-    #         hnw: solph.flows.Flow(
-    #             variable_costs=(
-    #                 param['sol']['op_cost_var']
-    #                 - param['sol']['BEW_op']
-    #                 ),
-    #             nominal_value=solph.Investment(
-    #                 ep_costs=(
-    #                     param['sol']['inv_spez_m'] / bwsf
-    #                     * (1 - param['param']['BEW'])
-    #                     ),
-    #                 maximum=param['sol']['cap_max'],
-    #                 minimum=param['sol']['cap_min'],
-    #                 offset=(
-    #                     param['sol']['inv_spez_b'] / bwsf
-    #                     * (1 - param['param']['BEW'])
-    #                     ),
-    #                 nonconvex=solph.NonConvex()
-    #             ),
-    #             fix=data['solar_heat_flow']
-    #         )}
-    #     )
-
     solar_source = solph.components.Source(
-        label='solar source',
-        outputs={sol_node: solph.flows.Flow()}
-        )
-
-    energy_system.add(biogas_source, elec_source, solar_source)
-
-    solar_thermal = solph.components.Converter(
         label='solar thermal',
-        inputs={sol_node: solph.flows.Flow()},
         outputs={
             hnw: solph.flows.Flow(
-                investment=solph.Investment(
+                variable_costs=(
+                    param['sol']['op_cost_var']
+                    - param['sol']['BEW_op']
+                    ),
+                nominal_value=solph.Investment(
                     ep_costs=(
                         param['sol']['inv_spez_m'] / bwsf
                         * (1 - param['param']['BEW'])
                         ),
-                    maximum=param['sol']['cap_max'],
-                    minimum=param['sol']['cap_min'],
-                    nonconvex=solph.NonConvex(),
                     offset=(
                         param['sol']['inv_spez_b'] / bwsf
                         * (1 - param['param']['BEW'])
-                        )
-                    ),
-                max=data['solar_heat_flow'],
-                min=data['solar_heat_flow'],
-                variable_costs=(
-                    max(param['sol']['op_cost_var'] - param['sol']['BEW_op'],
-                        param['sol']['op_cost_var'] * (1 - 0.9))
-                    )
-                )
-            },
-        conversion_factors={hnw: 1}
+                        ),
+                    nonconvex=solph.NonConvex()
+                ),
+                fix=data['solar_heat_flow']
+            )}
         )
 
-    energy_system.add(solar_thermal)
+    energy_system.add(biogas_source, elec_source, solar_source)
 
     # %% Sinks
     elec_sink = solph.components.Sink(

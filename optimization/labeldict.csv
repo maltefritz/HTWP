@@ -1,0 +1,171 @@
+name_out;name_in;type;label
+gas source;gas network;flow;H_source
+biogas source;biogas network;flow;H_bio_source
+electricity source;electricity network;flow;P_source
+sub network electricity source;sub electricity network;flow;P_sub_source
+heat network;heat demand;flow;Q_demand
+sub heat network;sub network heat demand;flow;Q_sub_demand
+peak load boiler;heat network;flow;Q_plb
+gas network;peak load boiler;flow;H_plb
+peak load boiler;heat network;invest;cap_plb
+ccet;heat network;flow;Q_ccet
+ccet;ccet node;flow;P_ccet
+gas network;ccet;flow;H_ccet
+ccet;heat network;invest;cap_ccet
+ccet 1;heat network;flow;Q_ccet1
+ccet 1;ccet node;flow;P_ccet1
+gas network;ccet 1;flow;H_ccet1
+ccet 1;heat network;invest;cap_ccet1
+ccet 2;heat network;flow;Q_ccet2
+ccet 2;ccet node;flow;P_ccet2
+gas network;ccet 2;flow;H_ccet2
+ccet 2;heat network;invest;cap_ccet2
+ccet node;ccet with chp bonus;flow;P_ccet_with_bonus
+ccet node;ccet no chp bonus;flow;P_ccet_no_bonus
+ccet no chp bonus;ccet no bonus node;flow;P_ccet_no_bonus_node
+ccet no bonus node;ccet no chp bonus internally;flow;P_ccet_no_bonus_int
+ccet no chp bonus internally;electricity network;flow;P_ccet_no_bonus_int
+ccet no bonus node;ccet no chp bonus externally;flow;P_ccet_no_bonus_ext
+ccet no chp bonus externally;spotmarket node;flow;P_ccet_no_bonus_ext
+ice;heat network;flow;Q_ice
+ice;ice node;flow;P_ice
+biogas network;ice;flow;H_ice
+ice;heat network;invest;cap_ice
+ice node;ice with chp bonus;flow;P_ice_with_bonus
+ice node;ice no chp bonus;flow;P_ice_no_bonus
+ice no chp bonus;ice no bonus node;flow;P_ice_no_bonus_node
+ice no bonus node;ice no chp bonus internally;flow;P_ice_no_bonus_int
+ice no chp bonus internally;electricity network;flow;P_ice_no_bonus_int
+ice no bonus node;ice no chp bonus externally;flow;P_ice_no_bonus_ext
+ice no chp bonus externally;spotmarket node;flow;P_ice_no_bonus_ext
+heat pump;heat network;flow;Q_out_hp
+electricity network;heat pump;flow;P_in_hp
+electricity network;heat pump;status;state_hp
+heat pump 1;heat network;flow;Q_out_hp1
+heat pump 2;heat network;flow;Q_out_hp2
+heat pump 3;heat network;flow;Q_out_hp3
+heat pump 4;heat network;flow;Q_out_hp4
+heat pump 5;heat network;flow;Q_out_hp5
+heat pump 6;heat network;flow;Q_out_hp6
+heat pump 7;heat network;flow;Q_out_hp7
+electricity network;heat pump 1;flow;P_in_hp1
+electricity network;heat pump 2;flow;P_in_hp2
+electricity network;heat pump 3;flow;P_in_hp3
+electricity network;heat pump 4;flow;P_in_hp4
+electricity network;heat pump 5;flow;P_in_hp5
+electricity network;heat pump 6;flow;P_in_hp6
+electricity network;heat pump 7;flow;P_in_hp7
+electricity network;heat pump 1;status;state_hp1
+electricity network;heat pump 2;status;state_hp2
+electricity network;heat pump 3;status;state_hp3
+electricity network;heat pump 4;status;state_hp4
+electricity network;heat pump 5;status;state_hp5
+electricity network;heat pump 6;status;state_hp6
+electricity network;heat pump 7;status;state_hp7
+heat pump 1;heat network;status;state_hp1
+heat pump 2;heat network;status;state_hp2
+heat pump 3;heat network;status;state_hp3
+heat pump 4;heat network;status;state_hp4
+heat pump 5;heat network;status;state_hp5
+heat pump 6;heat network;status;state_hp6
+heat pump 7;heat network;status;state_hp7
+heat pump 1;heat network;status_nominal;state_nom_hp1
+heat pump 2;heat network;status_nominal;state_nom_hp2
+heat pump 3;heat network;status_nominal;state_nom_hp3
+heat pump 4;heat network;status_nominal;state_nom_hp4
+heat pump 5;heat network;status_nominal;state_nom_hp5
+heat pump 6;heat network;status_nominal;state_nom_hp6
+heat pump 7;heat network;status_nominal;state_nom_hp7
+heat pump 1;heat network;invest;cap_hp1
+heat pump 2;heat network;invest;cap_hp2
+heat pump 3;heat network;invest;cap_hp3
+heat pump 4;heat network;invest;cap_hp4
+heat pump 5;heat network;invest;cap_hp5
+heat pump 6;heat network;invest;cap_hp6
+heat pump 7;heat network;invest;cap_hp7
+sub heat pump;sub heat network;flow;Q_out_sub_hp
+sub electricity network;sub heat pump;flow;P_in_sub_hp
+sub electricity network;sub heat pump;status;state_sub_hp
+sub heat pump 1;sub heat network;flow;Q_out_sub_hp1
+sub heat pump 2;sub heat network;flow;Q_out_sub_hp2
+sub heat pump 3;sub heat network;flow;Q_out_sub_hp3
+sub heat pump 4;sub heat network;flow;Q_out_sub_hp4
+sub heat pump 5;sub heat network;flow;Q_out_sub_hp5
+sub heat pump 6;sub heat network;flow;Q_out_sub_hp6
+sub heat pump 7;sub heat network;flow;Q_out_sub_hp7
+sub electricity network;sub heat pump 1;flow;P_in_sub_hp1
+sub electricity network;sub heat pump 2;flow;P_in_sub_hp2
+sub electricity network;sub heat pump 3;flow;P_in_sub_hp3
+sub electricity network;sub heat pump 4;flow;P_in_sub_hp4
+sub electricity network;sub heat pump 5;flow;P_in_sub_hp5
+sub electricity network;sub heat pump 6;flow;P_in_sub_hp6
+sub electricity network;sub heat pump 7;flow;P_in_sub_hp7
+sub electricity network;sub heat pump 1;status;state_sub_hp1
+sub electricity network;sub heat pump 2;status;state_sub_hp2
+sub electricity network;sub heat pump 3;status;state_sub_hp3
+sub electricity network;sub heat pump 4;status;state_sub_hp4
+sub electricity network;sub heat pump 5;status;state_sub_hp5
+sub electricity network;sub heat pump 6;status;state_sub_hp6
+sub electricity network;sub heat pump 7;status;state_sub_hp7
+sub heat pump 1;sub heat network;status;state_sub_hp1
+sub heat pump 2;sub heat network;status;state_sub_hp2
+sub heat pump 3;sub heat network;status;state_sub_hp3
+sub heat pump 4;sub heat network;status;state_sub_hp4
+sub heat pump 5;sub heat network;status;state_sub_hp5
+sub heat pump 6;sub heat network;status;state_sub_hp6
+sub heat pump 7;sub heat network;status;state_sub_hp7
+sub heat pump 1;sub heat network;status_nominal;state_nom_sub_hp1
+sub heat pump 2;sub heat network;status_nominal;state_nom_sub_hp2
+sub heat pump 3;sub heat network;status_nominal;state_nom_sub_hp3
+sub heat pump 4;sub heat network;status_nominal;state_nom_sub_hp4
+sub heat pump 5;sub heat network;status_nominal;state_nom_sub_hp5
+sub heat pump 6;sub heat network;status_nominal;state_nom_sub_hp6
+sub heat pump 7;sub heat network;status_nominal;state_nom_sub_hp7
+sub heat pump 1;sub heat network;invest;cap_sub_hp1
+sub heat pump 2;sub heat network;invest;cap_sub_hp2
+sub heat pump 3;sub heat network;invest;cap_sub_hp3
+sub heat pump 4;sub heat network;invest;cap_sub_hp4
+sub heat pump 5;sub heat network;invest;cap_sub_hp5
+sub heat pump 6;sub heat network;invest;cap_sub_hp6
+sub heat pump 7;sub heat network;invest;cap_sub_hp7
+st-tes;heat network;flow;Q_out_st-tes
+st-tes;heat network;status;state_out_st-tes
+st-tes;heat network;status_nominal;state_nom_out_st-tes
+st-tes;heat network;invest;cap_out_st-tes
+heat network;st-tes;flow;Q_in_st-tes
+heat network;st-tes;status;state_in_st-tes
+heat network;st-tes;status_nominal;state_nom_in_st-tes
+heat network;st-tes;invest;cap_in_st-tes
+st-tes;None;storage_content;storage_content_st-tes
+st-tes;None;invest;cap_st-tes
+s-tes;heat network;flow;Q_out_s-tes
+s-tes;heat network;status;state_out_s-tes
+s-tes;heat network;status_nominal;state_nom_out_s-tes
+s-tes;heat network;invest;cap_out_s-tes
+heat network;s-tes;flow;Q_in_s-tes
+heat network;s-tes;status;state_in_s-tes
+heat network;s-tes;status_nominal;state_nom_in_s-tes
+heat network;s-tes;invest;cap_in_s-tes
+s-tes;None;storage_content;storage_content_s-tes
+s-tes;None;invest;cap_s-tes
+sub st-tes;sub heat network;flow;Q_out_sub_st-tes
+sub st-tes;sub heat network;status;state_out_sub_st-tes
+sub st-tes;sub heat network;status_nominal;state_nom_out_sub_st-tes
+sub st-tes;sub heat network;invest;cap_out_sub_st-tes
+sub heat network;sub st-tes;flow;Q_in_sub_st-tes
+sub heat network;sub st-tes;status;state_in_sub_st-tes
+sub heat network;sub st-tes;status_nominal;state_nom_in_sub_st-tes
+sub heat network;sub st-tes;invest;cap_in_sub_st-tes
+sub st-tes;None;storage_content;storage_content_sub_st-tes
+sub st-tes;None;invest;cap_sub_st-tes
+electricity network;enw to spotmarket;flow;enw_to_spotmarket
+enw to spotmarket;spotmarket node;flow;enw_to_spotmarket
+ccet no chp bonus;electricity network;flow;P_ccet_no_bonus
+ccet with chp bonus;spotmarket node;flow;P_ccet_with_bonus
+ice no chp bonus;electricity network;flow;P_ice_no_bonus
+ice with chp bonus;spotmarket node;flow;P_ice_with_bonus
+spotmarket node;spotmarket;flow;P_spotmarket
+heat network;primary network;flow;Q_out_prim
+primary network;sub heat network;flow;Q_prim_to_sub
+solar thermal;heat network;flow;Q_sol
+solar thermal;heat network;invest;cap_sol

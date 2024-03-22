@@ -57,12 +57,10 @@ def primary_network_invest(results, meta_results, data, param, use_hp):
     result_labeling(data_all)
     data_all = data_all.loc[:,~data_all.columns.duplicated()].copy()
 
-    data_caps = pd.concat(
-        [data_hnw_caps,
-        pd.Series(data_st_tes_cap, name="(('st-tes', 'None'), 'invest')")],
-        axis=0
-        )
+    data_caps = data_hnw_caps
+    data_caps['cap_st-tes'] = data_st_tes_cap
     result_labeling(data_caps)
+
     # %% Deletion of unwated data
     drop_list = [
         'enw_to_spotmarket_node', 'P_ccet_no_bonus_node',
@@ -72,19 +70,40 @@ def primary_network_invest(results, meta_results, data, param, use_hp):
     for col in data_all.columns:
         if ('status' in col[-1]) or ('state' in col) or (col in drop_list):
             data_all.drop(columns=col, inplace=True)
+
+    data_caps = data_caps.to_frame().transpose()
+    data_caps.reset_index(inplace=True, drop=True)
+    for col in data_caps.columns:
+        if ('total' in str(col)) or ('0' in str(col)):
+            data_caps.drop(columns=col, inplace=True)
+
+    hpcaporder = get_hp_cap_order(data_caps)
+
+    for flow in ['P_in_', 'Q_out_']:
+        data_all.rename(
+            columns={
+                flow+old: flow+new for old, new in hpcaporder.items()
+                },
+            inplace=True
+            )
+
+    data_caps.rename(
+        columns={
+            'cap_'+old: 'cap_'+new for old, new in hpcaporder.items()
+            },
+        inplace=True
+        )
+
     try:
         data_all = data_all.reindex(sorted(data_all.columns), axis=1)
     except TypeError as e:
         print(f'TypeError in sorting data_all: {e}')
 
-    data_caps = data_caps.to_frame().transpose()
-    for col in data_caps.columns:
-        if ('total' in str(col)) or ('0' in str(col)):
-            data_caps.drop(columns=col, inplace=True)
     try:
         data_caps = data_caps.reindex(sorted(data_caps.columns), axis=1)
     except TypeError as e:
         print(f'TypeError in sorting data_caps: {e}')
+
 
     # %% Investment and operational cost calculation
     cost_df = pd.DataFrame()
@@ -95,10 +114,14 @@ def primary_network_invest(results, meta_results, data, param, use_hp):
             hp_Q_N = data_caps.loc[0, f'cap_hp{i}']
 
             label = f'heat pump {i}'
-            cost_df.loc['invest', label] =  (
-                param['hp']['inv_spez_m'] * hp_Q_N
-                + param['hp']['inv_spez_b']
-                )
+            if hp_Q_N > 1e-3:
+                hp_invest_N = (
+                    param['hp']['inv_spez_m'] * hp_Q_N
+                    + param['hp']['inv_spez_b']
+                    )
+            else:
+                hp_invest_N = 0
+            cost_df.loc['invest', label] = hp_invest_N
             cost_df.loc['op_cost_fix', label] = (
                 param['hp']['op_cost_fix'] * hp_Q_N
                 )
@@ -114,7 +137,7 @@ def primary_network_invest(results, meta_results, data, param, use_hp):
         # Maximum possible invest bonus of 40% of total invest cost
         key_params['total_bew_invest_bonus'] = sum(
             cost_df.loc['invest', col] for col in cost_df.columns if 'heat pump' in col
-            ) * 0.4
+            ) * param['param']['BEW']
         # Comply with upper limit of 100 Mio. €
         key_params['allowed_bew_invest_bonus'] = min(
             key_params['total_bew_invest_bonus'], 100e6
@@ -226,13 +249,16 @@ def primary_network_invest(results, meta_results, data, param, use_hp):
         )
 
     if use_hp:
-        key_params['revenues_hp_bew_op_bonus'] = (
-            (bew_op_bonus_Q_in_grid * data_all['P_source']
-                + bew_op_bonus_Q_in_self * data_all['P_ccet_no_bonus_int']
-            ) * (data_all['Q_out_hp']/data_all['P_in_hp']).replace(
-                np.inf, 0
-                )
-            ).sum()
+        if param['param']['use_BEW_op_bonus']:
+            key_params['revenues_hp_bew_op_bonus'] = (
+                (bew_op_bonus_Q_in_grid * data_all['P_source']
+                    + bew_op_bonus_Q_in_self * data_all['P_ccet_no_bonus_int']
+                ) * (data_all['Q_out_hp']/data_all['P_in_hp']).replace(
+                    np.inf, 0
+                    )
+                ).sum()
+        else:
+            key_params['revenues_hp_bew_op_bonus'] = 0
 
     key_params['revenues_heat'] = (
         data_all['Q_demand'].sum() * param['param']['heat_price']
@@ -270,6 +296,8 @@ def primary_network_invest(results, meta_results, data, param, use_hp):
         revenue=(key_params['revenues_total']-key_params['revenues_heat']),
         i=param['param']['capital_interest'], n=param['param']['lifetime']
         )
+
+    key_params['total_heat_demand'] = data_all['Q_demand'].sum()
 
     # %% Emission calculation
     data_all = emission_calc(data_all, data, param)
@@ -329,13 +357,8 @@ def sub_network_invest(results, meta_results, data, param, **kwargs):
     result_labeling(data_all)
     data_all = data_all.loc[:,~data_all.columns.duplicated()].copy()
 
-    data_caps = pd.concat(
-        [data_hnw_caps, data_sub_hnw_caps,
-        pd.Series(
-            data_sub_st_tes_cap, name="(('sub st-tes', 'None'), 'invest')"
-            )],
-        axis=0
-        )
+    data_caps = pd.concat([data_hnw_caps, data_sub_hnw_caps], axis=0)
+    data_caps['cap_sub_st-tes'] = data_sub_st_tes_cap
     result_labeling(data_caps)
 
     # %% Deletion of unwated data
@@ -353,13 +376,46 @@ def sub_network_invest(results, meta_results, data, param, **kwargs):
         print(f'TypeError in sorting data_all: {e}')
 
     data_caps = data_caps.to_frame().transpose()
+    data_caps.reset_index(inplace=True, drop=True)
     for col in data_caps.columns:
         if ('total' in str(col)) or ('0' in str(col)):
             data_caps.drop(columns=col, inplace=True)
+
+    hpcaporder = get_hp_cap_order(data_caps)
+    subhpcaporder = get_hp_cap_order(data_caps, hp_name='sub_hp')
+
+    for flow in ['P_in_', 'Q_out_']:
+        data_all.rename(
+            columns={
+                flow+old: flow+new for old, new in hpcaporder.items()
+                },
+            inplace=True
+            )
+        data_all.rename(
+            columns={
+                flow+old: flow+new for old, new in subhpcaporder.items()
+                },
+            inplace=True
+            )
+
+    data_caps.rename(
+        columns={
+            'cap_'+old: 'cap_'+new for old, new in hpcaporder.items()
+            },
+        inplace=True
+        )
+    data_caps.rename(
+        columns={
+            'cap_'+old: 'cap_'+new for old, new in subhpcaporder.items()
+            },
+        inplace=True
+        )
+
     try:
         data_caps = data_caps.reindex(sorted(data_caps.columns), axis=1)
     except TypeError as e:
         print(f'TypeError in sorting data_caps: {e}')
+
 
     # %% Investment and operational cost calculation
     cost_df = pd.DataFrame()
@@ -369,10 +425,14 @@ def sub_network_invest(results, meta_results, data, param, **kwargs):
         hp_Q_N = data_caps.loc[0, f'cap_hp{i}']
 
         label = f'heat pump {i}'
-        cost_df.loc['invest', label] =  (
-            param['hp']['inv_spez_m'] * hp_Q_N
-            + param['hp']['inv_spez_b']
-            )
+        if hp_Q_N > 1e-3:
+            hp_invest_N = (
+                param['hp']['inv_spez_m'] * hp_Q_N
+                + param['hp']['inv_spez_b']
+                )
+        else:
+            hp_invest_N = 0
+        cost_df.loc['invest', label] = hp_invest_N
         cost_df.loc['op_cost_fix', label] = (
             param['hp']['op_cost_fix'] * hp_Q_N
             )
@@ -401,10 +461,14 @@ def sub_network_invest(results, meta_results, data, param, **kwargs):
         sub_hp_Q_N = data_caps.loc[0, f'cap_sub_hp{i}']
 
         label = f'sub heat pump {i}'
-        cost_df.loc['invest', label] =  (
-            param['sub hp']['inv_spez_m'] * sub_hp_Q_N
-            + param['sub hp']['inv_spez_b']
-            )
+        if sub_hp_Q_N > 1e-3:
+            sub_hp_invest_N = (
+                param['sub hp']['inv_spez_m'] * sub_hp_Q_N
+                + param['sub hp']['inv_spez_b']
+                )
+        else:
+            sub_hp_invest_N = 0
+        cost_df.loc['invest', label] = sub_hp_invest_N
         cost_df.loc['op_cost_fix', label] = (
             param['sub hp']['op_cost_fix'] * sub_hp_Q_N
             )
@@ -426,7 +490,6 @@ def sub_network_invest(results, meta_results, data, param, **kwargs):
 
     bew_op_bonus_Q_in  = calc_bew_el_cost_sub(data, param)
 
-    # ccet
     ccet_Q_N = param['ccet']['Q_N']
     ccet_P_N = ccet_Q_N / data['ccet_eta_th'].mean() * data['ccet_eta_el'].mean()
     key_params['ccet_chp_bonus_real'] = chp_bonus(
@@ -485,7 +548,7 @@ def sub_network_invest(results, meta_results, data, param, **kwargs):
             bew_cols.append(col)
     key_params['total_bew_invest_bonus'] = (
         cost_df.loc['invest', bew_cols].sum()
-        ) * 0.4
+        ) * param['param']['BEW']
     # Comply with upper limit of 100 Mio. €
     key_params['allowed_bew_invest_bonus'] = min(
         key_params['total_bew_invest_bonus'], 100e6
@@ -605,6 +668,8 @@ def sub_network_invest(results, meta_results, data, param, **kwargs):
         i=param['param']['capital_interest'], n=param['param']['lifetime']
         )
 
+    key_params['total_heat_demand'] = data_all['Q_demand'].sum()
+
     # %% Emission calculation
     data_all = emission_calc(data_all, data, param)
     key_params['Total Emissions OM'] = data_all['Emissions OM'].sum()
@@ -672,24 +737,41 @@ def IVgdh_network_invest(results, meta_results, data, param):
     for col in data_all.columns:
         if ('status' in str(col)) or ('state' in str(col)):
             data_all.drop(columns=col, inplace=True)
+
+    data_caps = data_caps.to_frame().transpose()
+    data_caps.reset_index(inplace=True, drop=True)
+    for col in data_caps.columns:
+        if ('total' in str(col)) or ('0' in str(col)):
+            data_caps.drop(columns=col, inplace=True)
+
+    hpcaporder = get_hp_cap_order(data_caps)
+
+    for flow in ['P_in_', 'Q_out_']:
+        data_all.rename(
+            columns={
+                flow+old: flow+new for old, new in hpcaporder.items()
+                },
+            inplace=True
+            )
+
+    data_caps.rename(
+        columns={
+            'cap_'+old: 'cap_'+new for old, new in hpcaporder.items()
+            },
+        inplace=True
+        )
+
     try:
         data_all = data_all.reindex(sorted(data_all.columns), axis=1)
     except TypeError as e:
         print(f'TypeError in sorting data_all: {e}')
 
-    data_caps = data_caps.to_frame().transpose()
-
-    data_caps.reset_index(inplace=True, drop=True)
-
-    for col in data_caps.columns:
-        if ('total' in str(col)) or ('0' in str(col)):
-            data_caps.drop(columns=col, inplace=True)
     try:
         data_caps = data_caps.reindex(sorted(data_caps.columns), axis=1)
     except TypeError as e:
         print(f'TypeError in sorting data_caps: {e}')
 
-    # breakpoint()
+    data_caps.reset_index(inplace=True, drop=True)
 
     # %% Investment and operational cost calculation
     cost_df = pd.DataFrame()
@@ -699,10 +781,14 @@ def IVgdh_network_invest(results, meta_results, data, param):
         hp_Q_N = data_caps.loc[0, f'cap_hp{i}']
 
         label = f'heat pump {i}'
-        cost_df.loc['invest', label] =  (
-            param['hp']['inv_spez_m'] * hp_Q_N
-            + param['hp']['inv_spez_b']
-            )
+        if hp_Q_N > 1e-3:
+            hp_invest_N = (
+                param['hp']['inv_spez_m'] * hp_Q_N
+                + param['hp']['inv_spez_b']
+                )
+        else:
+            hp_invest_N = 0
+        cost_df.loc['invest', label] = hp_invest_N
         cost_df.loc['op_cost_fix', label] = (
             param['hp']['op_cost_fix'] * hp_Q_N
             )
@@ -782,7 +868,7 @@ def IVgdh_network_invest(results, meta_results, data, param):
                 bew_cols.append(col)
     key_params['total_bew_invest_bonus'] = (
         cost_df.loc['invest', bew_cols].sum()
-        ) * 0.4
+        ) * param['param']['BEW']
     # Comply with upper limit of 100 Mio. €
     key_params['allowed_bew_invest_bonus'] = min(
         key_params['total_bew_invest_bonus'], 100e6
@@ -880,6 +966,8 @@ def IVgdh_network_invest(results, meta_results, data, param):
         i=param['param']['capital_interest'], n=param['param']['lifetime']
         )
 
+    key_params['total_heat_demand'] = data_all['Q_demand'].sum()
+
     # %% Emission calculation
     data_all = emission_calc(data_all, data, param)
     key_params['Total Emissions OM'] = data_all['Emissions OM'].sum()
@@ -925,6 +1013,7 @@ def result_labeling(df, labeldictpath='labeldict.csv'):
             else:
                 print(f'Column name "{idx}" not in "{labeldictpath}".')
 
+
 def calc_cost(label, E_N, param, uc, cost_df, add_var_cost=None):
     """
     Calculate invest and operational cost for a unit.
@@ -960,6 +1049,44 @@ def calc_cost(label, E_N, param, uc, cost_df, add_var_cost=None):
         )
 
     return cost_df
+
+
+def get_hp_cap_order(data_caps, hp_name='hp', descending=True):
+    """
+    Sort heat pumps by capacity to allow renaming.
+
+    Parameters
+    ----------
+    data_caps : pandas.DataFrame
+        Resulting capacities of all investment optimized units. (Index is
+        currently assumed to be the integer value 0.)
+
+    hp_name : str
+        Name of heat pump in results. For now either 'hp' or 'sub_hp'.
+
+    descending : bool
+        Boolean flag whether to sort in a descending or ascending order. Default
+        is True -> descending order.
+
+    Returns
+    -------
+    renamedict: dict
+        Dictionairy with string pairs of key and value, corresponding to
+        previous and new name/order (e.g. 'hp1' is key and should be renamed to
+        its value 'hp6', since it has the sixth lowest capacity)
+    """
+    ascending = not descending
+    hpcols = [f'cap_{hp_name}{i}' for i in range(1, 8)]
+
+    colssorted = data_caps[hpcols].sort_values(
+        by=0, axis=1, ascending=ascending
+        ).columns.to_list()
+
+    renamedict = {
+        col[4:]: f'{hp_name}{i}' for i, col in enumerate(colssorted, start=1)
+        }
+
+    return renamedict
 
 
 def check_chp_bonus(data_all, data_caps, data, param):
@@ -1024,7 +1151,7 @@ def check_bew_bonus(data_all, data_caps, data, param):
             param['hp']['inv_spez_m'] * data_caps.loc[0, f'cap_hp{i}']
             + param['hp']['inv_spez_b']
             )
-    hp_inv_bonus = hp_inv_total * 0.4
+    hp_inv_bonus = hp_inv_total * param['param']['BEW']
 
     if 'sub hp' in param.keys():
         sub_hp_inv_total = 0
@@ -1033,8 +1160,7 @@ def check_bew_bonus(data_all, data_caps, data, param):
                 param['sub hp']['inv_spez_m'] * data_caps.loc[0, f'cap_sub_hp{i}']
                 + param['sub hp']['inv_spez_b']
                 )
-        sub_hp_inv_bonus = sub_hp_inv_total * 0.4
-
+        sub_hp_inv_bonus = sub_hp_inv_total * param['param']['BEW']
 
     key_params = {}
 
@@ -1094,7 +1220,6 @@ def check_bew_bonus(data_all, data_caps, data, param):
         return hp_inv_bonus, sub_hp_inv_bonus, key_params
 
 
-
 def check_subsidies(data_all, data_caps, data, param, savepath, use_hp=True):
     """
     Check all subsidies (chp and bew bonusses) based on assumptions againts real
@@ -1138,4 +1263,3 @@ def check_subsidies(data_all, data_caps, data, param, savepath, use_hp=True):
             )
 
     df.to_csv(savepath, sep=';')
-

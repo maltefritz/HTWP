@@ -4,13 +4,10 @@ from eco_funcs import bew_op_bonus
 def calc_bew_el_cost_prim(data, param):
     hp_P_max = (data['hp_Q_max'] - data['hp_c_0']) / data['hp_c_1']
     SCOP = data['hp_Q_max'].mean() / hp_P_max.mean()
-    if SCOP >= 2.5:
-        bew_op_bonus_Q_in = (
-            bew_op_bonus(SCOP, el_source_type='conventional')
-            * (data['hp_Q_max']-hp_P_max)/data['hp_Q_max']
-            )
-    else:
-        bew_op_bonus_Q_in = 0
+    bew_op_bonus_Q_in = (
+        bew_op_bonus(SCOP, el_source_type='conventional')
+        * (data['hp_Q_max']-hp_P_max)/data['hp_Q_max']
+        )
 
     el_cost_per_Q_out_grid = (
         (data['el_spot_price']+param['param']['elec_consumer_charges_grid'])
@@ -39,13 +36,10 @@ def calc_bew_el_cost_prim(data, param):
 def calc_bew_el_cost_sub(data, param):
     sub_hp_P_max = (data['sub_hp_Q_max'] - data['sub_hp_c_0']) / data['sub_hp_c_1']
     SCOP = data['sub_hp_Q_max'].mean() / sub_hp_P_max.mean()
-    if SCOP >= 2.5:
-        bew_op_bonus_Q_in = (
-            bew_op_bonus(SCOP, el_source_type='conventional')
-            * (data['sub_hp_Q_max']-sub_hp_P_max)/data['sub_hp_Q_max']
-            )
-    else:
-        bew_op_bonus_Q_in = 0
+    bew_op_bonus_Q_in = (
+        bew_op_bonus(SCOP, el_source_type='conventional')
+        * (data['sub_hp_Q_max']-sub_hp_P_max)/data['sub_hp_Q_max']
+        )
 
     el_cost_per_Q_out = (
         (data['el_spot_price']+param['param']['elec_consumer_charges_grid'])

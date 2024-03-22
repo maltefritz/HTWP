@@ -68,21 +68,30 @@ def primary_network_invest(data, param, use_hp=True, return_unsolved=False):
 
     # BEW operational bonus
     try:
-        bew_op_bonus_Q_in_grid, bew_op_bonus_Q_in_self = calc_bew_el_cost_prim(
-            data, param
-            )
-        hp_P_max = (data['hp_Q_max'] - data['hp_c_0']) / data['hp_c_1']
-
-        elec_source_cost = (
-            param['param']['elec_consumer_charges_grid']
-            - param['param']['elec_consumer_charges_self']
-            + data['el_spot_price']
-            + (data['hp_Q_max'] / hp_P_max) * (
-                - bew_op_bonus_Q_in_grid
-                + bew_op_bonus_Q_in_self
+        if param['param']['use_BEW_op_bonus']:
+            bew_op_bonus_Q_in_grid, bew_op_bonus_Q_in_self = calc_bew_el_cost_prim(
+                data, param
                 )
-            )
-    except KeyError:
+            hp_P_max = (data['hp_Q_max'] - data['hp_c_0']) / data['hp_c_1']
+
+            elec_source_cost = (
+                param['param']['elec_consumer_charges_grid']
+                - param['param']['elec_consumer_charges_self']
+                + data['el_spot_price']
+                + (data['hp_Q_max'] / hp_P_max) * (
+                    - bew_op_bonus_Q_in_grid
+                    + bew_op_bonus_Q_in_self
+                    )
+                )
+        else:
+            bew_op_bonus_Q_in_self = 0
+            elec_source_cost = (
+                param['param']['elec_consumer_charges_grid']
+                - param['param']['elec_consumer_charges_self']
+                + data['el_spot_price']
+                )
+    except KeyError as e:
+        print(f'KeyError Exception: {e}')
         elec_source_cost = (
             param['param']['elec_consumer_charges_grid']
             - param['param']['elec_consumer_charges_self']
@@ -338,9 +347,23 @@ def primary_network_invest(data, param, use_hp=True, return_unsolved=False):
 
     # %% Solve
     model = solph.Model(energy_system)
+    # model.write('my_model.lp', io_options={'symbolic_solver_labels': True})
+    solveroptions = {}
+    if 'mipgap' in param['param'].keys():
+        solveroptions['MIPGap'] = param['param']['mipgap']
+    if 'TimeLimit' in param['param'].keys():
+        solveroptions['TimeLimit'] = param['param']['TimeLimit']
+    if 'MIPFocus' in param['param'].keys():
+        solveroptions['MIPFocus'] = param['param']['MIPFocus']
+    if 'SolverLogPath' in param['param'].keys():
+        solveroptions['LogFile'] = param['param']['SolverLogPath']
+    if 'ResultFile' in param['param'].keys():
+        solveroptions['ResultFile'] = param['param']['ResultFile']
+    if 'InputFile' in param['param'].keys():
+        solveroptions['InputFile'] = param['param']['InputFile']
     model.solve(
         solver='gurobi', solve_kwargs={'tee': True},
-        cmdline_options={"mipgap": param['param']['mipgap']}
+        cmdline_options=solveroptions
         )
 
     # Ergebnisse in results
@@ -416,9 +439,12 @@ def sub_network_invest(data, param, **kwargs):
     energy_system.add(sub_heat_sink)
 
     # %% Primary Network Heat pump
-    _, bew_op_bonus_Q_in_self = calc_bew_el_cost_prim(
-        data, param
-        )
+    if param['param']['use_BEW_op_bonus']:
+        _, bew_op_bonus_Q_in_self = calc_bew_el_cost_prim(
+            data, param
+            )
+    else:
+        bew_op_bonus_Q_in_self = 0
 
     for i in range(1, param['hp']['amount']+1):
         hp = solph.components.OffsetConverter(
@@ -457,7 +483,11 @@ def sub_network_invest(data, param, **kwargs):
         energy_system.add(hp)
 
     # %% Sub Network Heat Pump
-    bew_op_bonus_Q_in = calc_bew_el_cost_sub(data, param)
+    if param['param']['use_BEW_op_bonus']:
+        bew_op_bonus_Q_in = calc_bew_el_cost_sub(data, param)
+    else:
+        bew_op_bonus_Q_in = 0
+
 
     for i in range(1, param['sub hp']['amount']+1):
         sub_hp = solph.components.OffsetConverter(
@@ -540,9 +570,23 @@ def sub_network_invest(data, param, **kwargs):
 
     # %% Solve
     model = solph.Model(energy_system)
+    # model.write('my_model.lp', io_options={'symbolic_solver_labels': True})
+    solveroptions = {}
+    if 'mipgap' in param['param'].keys():
+        solveroptions['MIPGap'] = param['param']['mipgap']
+    if 'TimeLimit' in param['param'].keys():
+        solveroptions['TimeLimit'] = param['param']['TimeLimit']
+    if 'MIPFocus' in param['param'].keys():
+        solveroptions['MIPFocus'] = param['param']['MIPFocus']
+    if 'SolverLogPath' in param['param'].keys():
+        solveroptions['LogFile'] = param['param']['SolverLogPath']
+    if 'ResultFile' in param['param'].keys():
+        solveroptions['ResultFile'] = param['param']['ResultFile']
+    if 'InputFile' in param['param'].keys():
+        solveroptions['InputFile'] = param['param']['InputFile']
     model.solve(
         solver='gurobi', solve_kwargs={'tee': True},
-        cmdline_options={"mipgap": param['param']['mipgap']}
+        cmdline_options=solveroptions
         )
 
     # Ergebnisse in results
@@ -619,9 +663,14 @@ def IVgdh_network_invest(data, param):
         )
 
     # BEW operational bonus
-    bew_op_bonus_Q_in_grid, bew_op_bonus_Q_in_self = calc_bew_el_cost_prim(
-        data, param
-        )
+    if param['param']['use_BEW_op_bonus']:
+        bew_op_bonus_Q_in_grid, bew_op_bonus_Q_in_self = calc_bew_el_cost_prim(
+            data, param
+            )
+    else:
+        bew_op_bonus_Q_in_grid = 0
+        bew_op_bonus_Q_in_self = 0
+
     hp_P_max = (data['hp_Q_max'] - data['hp_c_0']) / data['hp_c_1']
 
     elec_source = solph.components.Source(
@@ -887,10 +936,23 @@ def IVgdh_network_invest(data, param):
 
     # %% Solve
     model = solph.Model(energy_system)
-    model.write('my_model.lp', io_options={'symbolic_solver_labels': True})
+    # model.write('my_model.lp', io_options={'symbolic_solver_labels': True})
+    solveroptions = {}
+    if 'mipgap' in param['param'].keys():
+        solveroptions['MIPGap'] = param['param']['mipgap']
+    if 'TimeLimit' in param['param'].keys():
+        solveroptions['TimeLimit'] = param['param']['TimeLimit']
+    if 'MIPFocus' in param['param'].keys():
+        solveroptions['MIPFocus'] = param['param']['MIPFocus']
+    if 'SolverLogPath' in param['param'].keys():
+        solveroptions['LogFile'] = param['param']['SolverLogPath']
+    if 'ResultFile' in param['param'].keys():
+        solveroptions['ResultFile'] = param['param']['ResultFile']
+    if 'InputFile' in param['param'].keys():
+        solveroptions['InputFile'] = param['param']['InputFile']
     model.solve(
         solver='gurobi', solve_kwargs={'tee': True},
-        cmdline_options={"mipgap": param['param']['mipgap']}
+        cmdline_options=solveroptions
         )
 
     # Ergebnisse in results

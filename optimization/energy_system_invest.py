@@ -705,6 +705,7 @@ def IVgdh_network_invest(data, param):
                         param['sol']['inv_spez_b'] / bwsf
                         * (1 - param['param']['BEW'])
                         ),
+                    maximum=param['sol']['cap_max'],
                     nonconvex=solph.NonConvex()
                 ),
                 fix=data['solar_heat_flow']

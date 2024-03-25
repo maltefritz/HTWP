@@ -9,28 +9,14 @@ import postprocessing_invest
 # %% Simulation parameters
 overwrite = True
 
-# Kim Possible energy_systems: 'pn', 'pn_wohp', 'sns', 'sn', 'IVgdh'
-# energy_systems = ['pn', 'sn', 'IVgdh']
-# energy_systems = ['pn', 'IVgdh']
-# energy_systems = ['pn']
-energy_systems = ['sn']
-# energy_systems = ['IVgdh']
+# Energy Systems: 'pn', 'sn', 'IVgdh'
+energy_systems = ['pn', 'sn', 'IVgdh']
 
-# Ronald Wesley scenarios: '16', '19', '40A', '40B'
-# scenarios = ['19', '40DG', '40GCA']
-# scenarios = ['19', '40DG']
-# scenarios = ['19']
-# scenarios = ['40DG', '40GCA']
-# scenarios = ['40GCA']
-scenarios = ['40DG']
+# Scenarios:  '19', '40DG', '40GCA'
+scenarios = ['19', '40DG', '40GCA']
 
 # Heat Pumps
 hps = ['HeatPumpPCEconOpen_R717', 'HeatPumpPCEconOpen_R1234ZE(Z)', 'HeatPumpSimple_R717']
-# hps = ['HeatPumpPCEconOpen_R717', 'HeatPumpPCEconOpen_R1234ZE(Z)']
-# hps = ['HeatPumpPCEconOpen_R717']
-# hps = ['HeatPumpPCEconOpen_R1234ZE(Z)']
-# hps = ['HeatPumpSimple_R717']
-# hps = ['woHeatPump']
 
 # Call of energy system functions - noch vervollständigen
 es_funcs = {
@@ -89,7 +75,7 @@ for es in energy_systems:
                 changed = False
 
                 if data['biogas_price'].mean() != 124.82:
-                    data['biogas_price'] = 124.82  # Biogaspreis bis 2040 extrapoliert
+                    data['biogas_price'] = 124.82
                     changed = True
                     print('Biogaspreis angepasst!')
 
@@ -121,8 +107,8 @@ for es in energy_systems:
                 param['s-tes']['cap_max'] = 1e6
                 param['sol']['cap_max'] = 1e6
 
-                param['s-tes']['Q_in_CHECK_IF_SET'] = data['heat_demand'].max()
-                param['s-tes']['Q_out_CHECK_IF_SET'] = param['s-tes']['Q_in_CHECK_IF_SET']
+                param['s-tes']['Q_in'] = data['heat_demand'].max()
+                param['s-tes']['Q_out'] = param['s-tes']['Q_in']
 
                 with open(paramfile, 'w', encoding='utf-8') as file:
                     json.dump(param, file, indent=4)
@@ -141,7 +127,7 @@ for es in energy_systems:
                 longnames[es], 'output', es+scn,
                 f'{es}{scn}_invest_GUROBILOG_{hp}.log'
                 )
-            # param['param']['mipgap'] = 1e-3
+
             param['param']['mipgap'] = 1e-4
             param['param']['TimeLimit'] = 60*60*2
             param['param']['MIPFocus'] = 2
@@ -157,8 +143,6 @@ for es in energy_systems:
                 args.append(use_hp)
 
             results, meta_results = es_funcs[es](*args)
-
-            # breakpoint()
 
             args = [results, meta_results, data, param]
             if es == 'pn':

@@ -263,16 +263,16 @@ def primary_network_invest(data, param, use_hp=True, return_unsolved=False):
             ),
         inputs={
             hnw: solph.flows.Flow(
-                variable_costs=param['st-tes']['op_cost_var'],
+                nominal_value=param['st-tes']['Q_in'],
+                variable_costs=param['st-tes']['op_cost_var']
                 )
             },
         outputs={
             hnw: solph.flows.Flow(
-                variable_costs=param['st-tes']['op_cost_var'],
+                nominal_value=param['st-tes']['Q_out'],
+                variable_costs=param['st-tes']['op_cost_var']
                 )
             },
-        invest_relation_input_capacity=param['st-tes']['Q_in_to_cap'],
-        invest_relation_output_capacity=param['st-tes']['Q_out_to_cap'],
         initial_storage_level=param['st-tes']['init_storage'],
         loss_rate=param['st-tes']['Q_rel_loss'],
         inflow_conversion_factor=param['st-tes']['inflow_conv'],
@@ -535,11 +535,13 @@ def sub_network_invest(data, param, **kwargs):
             ),
         inputs={
             sub_hnw: solph.flows.Flow(
+                nominal_value=param['sub st-tes']['Q_in'],
                 variable_costs=param['sub st-tes']['op_cost_var']
                 )
             },
         outputs={
             sub_hnw: solph.flows.Flow(
+                nominal_value=param['sub st-tes']['Q_out'],
                 variable_costs=param['sub st-tes']['op_cost_var']
                 )
             },

@@ -49,25 +49,6 @@ def npv(invest, cashflow, i=0.05, n=20):
     return npv
 
 
-def LCOH_old(invest, cashflow, Q, i=0.05, n=20):
-    """Konstantin 2013, Markus [29].
-
-    LCOH        Wärmegestehungskosten
-    invest:     Investitionsausgaben zum Zeitpunkt t=0
-    bwsf:       Barwert Summenfaktor
-    cashflow:   Differenz aller Einnahmen und Ausgaben (Zahlungsströme)
-                innerhalb des betrachteten Jahres
-    Q:          Gesamte bereitgestellte Wärmemenge pro Jahr
-    i:          Kalkulationszinssatz
-    n:          Betrachtungsdauer
-    """
-    q = 1 + i
-    bwsf = (q**n - 1)/(q**n * (q - 1))
-
-    LCOH = abs(-invest * bwsf**(-1) + cashflow) / Q
-    return LCOH
-
-
 def LCOH(invest, cost, Q, revenue=0, i=0.05, n=20):
     """Konstantin 2013, Markus [29].
 
@@ -85,40 +66,6 @@ def LCOH(invest, cost, Q, revenue=0, i=0.05, n=20):
 
     LCOH = (invest + bwsf * (cost - revenue))/(bwsf * Q)
     return LCOH
-
-
-def emission_calc(data_emission):
-    """Calculate the emissions compared with overall and displacement mix."""
-    co2 = pd.read_csv('input\\emissions2016.csv', sep=";")
-    co2['Date'] = pd.to_datetime(co2['Date'], format='%d.%m.%Y %H:%M')
-    co2.set_index('Date', inplace=True)
-
-    Em_om = list()
-    Em_dm = list()
-
-    e_fuel = 0.2012    # in t/MWh aus "Emissionsbewertung Daten"
-
-    for idx_em, idx_co2 in zip(data_emission.index, co2.index):
-        Em_om.append(
-            data_emission.loc[idx_em, 'H_source'] * e_fuel
-            + data_emission.loc[idx_em, 'P_source'] * co2.loc[idx_co2, 'EF om']
-            - (data_emission.loc[idx_em, 'P_spot_market']
-               * co2.loc[idx_co2, 'EF om'])
-            )
-
-        Em_dm.append(
-            data_emission.loc[idx_em, 'H_source'] * e_fuel
-            + data_emission.loc[idx_em, 'P_source'] * co2.loc[idx_co2, 'EF dm']
-            - (data_emission.loc[idx_em, 'P_spotmarket']
-               * co2.loc[idx_co2, 'EF dm'])
-            )
-
-    dfEm = pd.DataFrame({'date': data_emission.index,
-                         'overall mix': Em_om,
-                         'displacement mix': Em_dm})
-    dfEm.set_index('date', inplace=True)
-
-    return dfEm
 
 
 def emission_calc(data_all, data, param):

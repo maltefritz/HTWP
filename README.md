@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/449297639.svg)](https://zenodo.org/doi/10.5281/zenodo.10869215)
+
 # High Temperature Heat Pumps in Local and District Heating Systems (HTWP)
 
 Technology perspectives for short and medium term use in multivalent systems

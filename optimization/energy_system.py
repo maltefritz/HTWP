@@ -227,7 +227,7 @@ def primary_network(data, param, use_hp=True, return_unsolved=False):
         nominal_storage_capacity=param['st-tes']['Q'],
         inputs={
             hnw: solph.Flow(
-                nominal_value=param['st-tes']['Q_N_in'],
+                nominal_value=param['st-tes']['Q_in'],
                 max=param['st-tes']['Q_rel_in_max'],
                 min=param['st-tes']['Q_rel_in_min'],
                 variable_costs=param['st-tes']['op_cost_var'],
@@ -235,7 +235,7 @@ def primary_network(data, param, use_hp=True, return_unsolved=False):
                 )},
         outputs={
             hnw: solph.Flow(
-                nominal_value=param['st-tes']['Q_N_out'],
+                nominal_value=param['st-tes']['Q_out'],
                 max=param['st-tes']['Q_rel_out_max'],
                 min=param['st-tes']['Q_rel_out_min'],
                 nonconvex=solph.NonConvex())},

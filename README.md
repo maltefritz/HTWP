@@ -35,11 +35,11 @@ The `'input'` folder contains the necessary input data for the combined investme
 
 ### Output
 
-This folder serves as a container for the output data of the combined investment and dispatch optimization. For each setup, there are the unit commitment time series, as well as key parameters and unit cost. Additionally, the results are visualized in plots, that allow an even more detailed analysis than provided in the paper.
+This folder serves as a container for the output data of the combined investment and dispatch optimization. For each setup, there are the optimized capacites and unit commitment time series, as well as key parameters and unit cost. Additionally, the results are visualized in plots, that allow an even more detailed analysis than provided in the final report.
 
 # Reproduction
 
-To achieve reproducible results, the necessary dependencies are saved in the `requirements.txt` file. In a clean environment from the root directory the installation from this file should allow the full reproduction of the results. This steps could look like this:
+To achieve reproducible results, the necessary dependencies are saved in the `requirements.txt` file. In a clean environment from the root directory the installation from this file should allow the full reproduction of the results. The steps could look like this:
 
 ```
 conda create -n my_new_env python=3.10

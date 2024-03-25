@@ -282,10 +282,6 @@ class HeatPumpSimple(HeatPumpBase):
                         self.nw.solve(
                             'offdesign', design_path=self.design_path
                             )
-                        # self.nw.solve(
-                        #     'offdesign', design_path=self.design_path,
-                        #     init_path=self.init_path
-                        #     )
                         failed = False
                     except ValueError:
                         failed = True

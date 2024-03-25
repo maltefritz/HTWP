@@ -28,15 +28,6 @@ class HeatPumpBase:
             self.fluid_vec_si = {self.wf: 0, self.si: 1, self.so: 0}
             self.fluid_vec_so = {self.wf: 0, self.si: 0, self.so: 1}
 
-        # if self.si == self.so:
-        #     self.fluid_vec_wf = {self.wf: 1}
-        #     self.fluid_vec_si = {self.si: 1}
-        #     self.fluid_vec_so = {self.si: 1}
-        # else:
-        #     self.fluid_vec_wf = {self.wf: 1}
-        #     self.fluid_vec_si = {self.si: 1}
-        #     self.fluid_vec_so = {self.so: 1}
-
         self.comps = dict()
         self.conns = dict()
         self.busses = dict()
@@ -85,7 +76,6 @@ class HeatPumpBase:
         if 'print_results' in kwargs:
             if kwargs['print_results']:
                 self.nw.print_results()
-        # if self.nw.residual_history[-1] < 1e-3:
         if self.nw.res[-1] < 1e-3:
             self.solved_design = True
             self.nw.save(self.design_path)
@@ -101,8 +91,6 @@ class HeatPumpBase:
 
     def create_ranges(self):
         """Create stable and base ranges for T_hs_ff, T_cons_ff and pl."""
-        # TODO: Braucht es die Endpunkte der Range doppelt?
-        # TODO: Braucht es den Rückweg zum Designpunkt von T_hs_ff?
         self.T_hs_ff_range = np.linspace(
             self.params['offdesign']['T_hs_ff_start'],
             self.params['offdesign']['T_hs_ff_end'],
@@ -207,27 +195,25 @@ class HeatPumpBase:
 
             elif comptype == 'HeatExchanger':
                 if 'Evaporator' in complabel or 'Economizer' in complabel:
-                    val = comp.kA.val / 1500    # 2500  # 1483
-                # elif 'Internal Heat Exchanger' in complabel:
-                #     val = comp.kA.val / 3577
+                    val = comp.kA.val / 1500
                 elif 'Transcritical' in complabel:
                     val = comp.kA.val / 60
                 else:
-                    val = comp.kA.val / 50    # 2550  # 173.4
+                    val = comp.kA.val / 50
                 self.cost[complabel] = self.eval_costfunc(
                     val, 42, 15526, 0.80
                     ) * cepci_factor
                 self.design_params[complabel] = val
 
             elif comptype == 'Condenser':
-                val = comp.kA.val / 3500    # 2500  # 3696
+                val = comp.kA.val / 3500
                 self.cost[complabel] = self.eval_costfunc(
                     val, 42, 15526, 0.80
                     ) * cepci_factor
                 self.design_params[complabel] = val
 
             elif comptype == 'DropletSeparator' or comptype == 'Drum':
-                residence_time = 10     # 5 * 60  # in Sekunden
+                residence_time = 10
                 conn_liquid = (
                     self.nw.conns[
                         (self.nw.conns['source'].apply(lambda x: x.label) == complabel)

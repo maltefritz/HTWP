@@ -228,16 +228,12 @@ def primary_network(data, param, use_hp=True, return_unsolved=False):
         inputs={
             hnw: solph.Flow(
                 nominal_value=param['st-tes']['Q_in'],
-                max=param['st-tes']['Q_rel_in_max'],
-                min=param['st-tes']['Q_rel_in_min'],
                 variable_costs=param['st-tes']['op_cost_var'],
                 nonconvex=solph.NonConvex()
                 )},
         outputs={
             hnw: solph.Flow(
                 nominal_value=param['st-tes']['Q_out'],
-                max=param['st-tes']['Q_rel_out_max'],
-                min=param['st-tes']['Q_rel_out_min'],
                 nonconvex=solph.NonConvex())},
         initial_storage_level=param['st-tes']['init_storage'],
         loss_rate=param['st-tes']['Q_rel_loss'],
